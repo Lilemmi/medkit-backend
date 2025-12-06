@@ -21,3 +21,4 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "`n❌ Ошибка валидации схемы. Проверьте .env файл." -ForegroundColor Red
 }
 
+
