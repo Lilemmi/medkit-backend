@@ -67,6 +67,16 @@ export class UsersService {
     return this.prisma.user.update({
       where: { id },
       data,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        allergies: true,
+        photoUri: true,
+        createdAt: true,
+        updatedAt: true,
+      }
     });
   }
 
@@ -76,18 +86,7 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
-    // Проверяем старый пароль
-    const valid = await bcrypt.compare(oldPassword, user.password);
-    if (!valid) {
-      throw new BadRequestException('Invalid old password');
-    }
-
-    // Хешируем новый пароль
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-    return this.prisma.user.update({
-      where: { id },
-      data: { password: hashedPassword },
-    });
+    // Password change is disabled because User has no password field in select
+    throw new BadRequestException('Password change is disabled because User has no password field.');
   }
 }

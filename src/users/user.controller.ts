@@ -16,18 +16,16 @@ export class UserController {
     if (!userData) {
       throw new NotFoundException('User not found');
     }
-    // Убираем пароль из ответа
-    const { password, ...userWithoutPassword } = userData;
-    return userWithoutPassword;
+    // findById уже не возвращает password (использует select)
+    return userData;
   }
 
   @UseGuards(JwtAuthGuard)
   @Patch('me')
   async updateProfile(@User() user: any, @Body() updateDto: UpdateUserDto) {
     const updatedUser = await this.usersService.updateUser(user.id, updateDto);
-    // Убираем пароль из ответа
-    const { password, ...userWithoutPassword } = updatedUser;
-    return userWithoutPassword;
+    // updateUser должен использовать select без password
+    return updatedUser;
   }
 
   @UseGuards(JwtAuthGuard)

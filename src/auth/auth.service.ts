@@ -22,10 +22,8 @@ export class AuthService {
 
     const token = await this.jwt.signAsync({ sub: user.id });
 
-    // Убираем пароль из ответа
-    const { password: _, ...userWithoutPassword } = user;
-
-    return { user: userWithoutPassword, token };
+    // createUser уже не возвращает password (использует select)
+    return { user, token };
   }
 
   async login(email: string, password: string) {
@@ -37,8 +35,8 @@ export class AuthService {
 
     const token = await this.jwt.signAsync({ sub: user.id });
 
-    // Убираем пароль из ответа
-    const { password: _, ...userWithoutPassword } = user;
+    // findById уже не возвращает password (использует select)
+    const userWithoutPassword = await this.usersService.findById(user.id);
 
     return { user: userWithoutPassword, token };
   }
