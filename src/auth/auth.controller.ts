@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { User } from './decorators/user.decorator';
 import { LoginDto } from './dto/login.dto';
@@ -11,11 +11,52 @@ export class AuthController {
 
   @Post('register')
   register(@Body() dto: RegisterDto) {
+    // Логируем, что пришло на бэкенд
+    console.log('📥 REGISTER REQUEST received:', {
+      name: dto.name,
+      email: dto.email,
+      password: dto.password ? '***' : undefined,
+      dtoType: typeof dto,
+      dtoKeys: Object.keys(dto),
+    });
+    
+    // Проверяем, что данные не undefined
+    if (!dto.email || dto.email === undefined) {
+      console.error('❌ REGISTER: email is undefined!', { dto });
+      throw new BadRequestException('Email is required');
+    }
+    if (!dto.name || dto.name === undefined) {
+      console.error('❌ REGISTER: name is undefined!', { dto });
+      throw new BadRequestException('Name is required');
+    }
+    if (!dto.password || dto.password === undefined) {
+      console.error('❌ REGISTER: password is undefined!', { dto });
+      throw new BadRequestException('Password is required');
+    }
+    
     return this.auth.register(dto.name, dto.email, dto.password);
   }
 
   @Post('login')
   login(@Body() dto: LoginDto) {
+    // Логируем, что пришло на бэкенд
+    console.log('📥 LOGIN REQUEST received:', {
+      email: dto.email,
+      password: dto.password ? '***' : undefined,
+      dtoType: typeof dto,
+      dtoKeys: Object.keys(dto),
+    });
+    
+    // Проверяем, что данные не undefined
+    if (!dto.email || dto.email === undefined) {
+      console.error('❌ LOGIN: email is undefined!', { dto });
+      throw new BadRequestException('Email is required');
+    }
+    if (!dto.password || dto.password === undefined) {
+      console.error('❌ LOGIN: password is undefined!', { dto });
+      throw new BadRequestException('Password is required');
+    }
+    
     return this.auth.login(dto.email, dto.password);
   }
 

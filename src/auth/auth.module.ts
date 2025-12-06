@@ -9,7 +9,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
   imports: [
     forwardRef(() => UsersModule),
     JwtModule.register({
-      secret: 'SUPER_SECRET_KEY', // вынесем в .env
+      secret: process.env.JWT_SECRET || 'SUPER_SECRET_KEY', // Используем из .env или fallback
       signOptions: { expiresIn: '7d' },
     }),
   ],
