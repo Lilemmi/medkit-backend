@@ -1,9 +1,9 @@
-import { Controller, Get, Patch, UseGuards, Body } from '@nestjs/common';
-import { UsersService } from './users.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Body, Controller, Get, NotFoundException, Patch, UseGuards } from '@nestjs/common';
 import { User } from '../auth/decorators/user.decorator';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { UsersService } from './users.service';
 
 @Controller('users')
 export class UserController {
@@ -14,7 +14,7 @@ export class UserController {
   async getProfile(@User() user: any) {
     const userData = await this.usersService.findById(user.id);
     if (!userData) {
-      return { error: 'User not found' };
+      throw new NotFoundException('User not found');
     }
     // Убираем пароль из ответа
     const { password, ...userWithoutPassword } = userData;
