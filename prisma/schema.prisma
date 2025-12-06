@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  name      String
+  email     String    @unique
+  password  String
+  phone     String?
+  allergies String?
+  photoUri  String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  medicines Medicine[]
+  inventoryHistory InventoryHistory[]
+  
+  @@index([email])
+}
+
+model Medicine {
+  id        Int      @id @default(autoincrement())
+  name      String?
+  dose      String?
+  form      String?
+  expiry    DateTime?
+  photoUri  String?
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  inventoryHistory InventoryHistory[]
+  
+  @@index([userId])
+  @@index([expiry])
+}
+
+model InventoryHistory {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  medicineId Int?
+  medicine  Medicine? @relation(fields: [medicineId], references: [id], onDelete: SetNull)
+  action    String   // 'created', 'updated', 'deleted', 'expired', 'expiring_soon'
+  oldData   Json?    // Старые данные (для обновлений)
+  newData   Json?    // Новые данные
+  description String? // Описание действия
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
+  @@index([medicineId])
+  @@index([createdAt])
+  @@index([action])
+}
