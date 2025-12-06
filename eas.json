@@ -1,0 +1,50 @@
+{
+  "cli": {
+    "version": ">= 3.8.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "apk": {
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "GRADLE_OPTS": "-XX:MaxMetaspaceSize=4096m -XX:MetaspaceSize=2048m -XX:+UseG1GC -XX:MaxDirectMemorySize=2048m -Dorg.gradle.daemon.idletimeout=10800000",
+        "KOTLIN_DAEMON_JVM_OPTIONS": "-Xmx4096m -XX:MaxMetaspaceSize=4096m",
+        "ANDROID_LINT_OPTS": "-Xmx4096m -XX:MaxMetaspaceSize=4096m --disable-all",
+        "KSP_JVM_OPTIONS": "-Xmx4096m -XX:MaxMetaspaceSize=4096m",
+        "EXPO_NO_ANDROID_LINT": "1",
+        "GRADLE_OPTS_APPEND": "-XX:+HeapDumpOnOutOfMemoryError -XX:MaxMetaspaceSize=2048m -Dandroid.lint.enabled=false"
+      }
+    },
+    "preview": {
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {
+        "GRADLE_OPTS": "-XX:MaxMetaspaceSize=4096m -XX:MetaspaceSize=2048m -XX:+UseG1GC -XX:MaxDirectMemorySize=2048m -Dorg.gradle.daemon.idletimeout=10800000",
+        "KOTLIN_DAEMON_JVM_OPTIONS": "-Xmx4096m -XX:MaxMetaspaceSize=4096m",
+        "ANDROID_LINT_OPTS": "-Xmx4096m -XX:MaxMetaspaceSize=4096m --disable-all",
+        "KSP_JVM_OPTIONS": "-Xmx4096m -XX:MaxMetaspaceSize=4096m",
+        "EXPO_NO_ANDROID_LINT": "1",
+        "GRADLE_OPTS_APPEND": "-XX:+HeapDumpOnOutOfMemoryError -XX:MaxMetaspaceSize=2048m -Dandroid.lint.enabled=false"
+      }
+    },
+    "production": {
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {
+        "GRADLE_OPTS": "-XX:MaxMetaspaceSize=4096m -XX:MetaspaceSize=2048m -XX:+UseG1GC -XX:MaxDirectMemorySize=2048m -Dorg.gradle.daemon.idletimeout=10800000",
+        "KOTLIN_DAEMON_JVM_OPTIONS": "-Xmx4096m -XX:MaxMetaspaceSize=4096m",
+        "ANDROID_LINT_OPTS": "-Xmx4096m -XX:MaxMetaspaceSize=4096m --disable-all",
+        "KSP_JVM_OPTIONS": "-Xmx4096m -XX:MaxMetaspaceSize=4096m",
+        "EXPO_NO_ANDROID_LINT": "1",
+        "GRADLE_OPTS_APPEND": "-XX:+HeapDumpOnOutOfMemoryError -XX:MaxMetaspaceSize=2048m -Dandroid.lint.enabled=false"
+      }
+    }
+  }
+}
+
+
+

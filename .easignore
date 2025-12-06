@@ -1,0 +1,21 @@
+﻿# Backend файлы (не нужны для мобильного приложения)
+src/auth/
+src/notifications/
+src/app.module.ts
+src/main.ts
+src/database/medicine.cron.ts
+
+# Backend папка
+medkit-backend/
+
+# Старые тесты
+src/**/*.spec.ts
+
+# Временные файлы
+.expo/
+dist/
+node_modules/
+
+# Сгенерированные нативные папки (создаются при prebuild)
+# android/ - раскомментировано для сохранения изменений в gradle.properties и AndroidManifest.xml
+ios/
