@@ -11,11 +11,36 @@ export class UsersService {
   }
 
   async createUser(name: string, email: string, password: string) {
-    return this.prisma.user.create({ data: { name, email, password } });
+    const user = await this.prisma.user.create({ 
+      data: { name, email, password },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        allergies: true,
+        photoUri: true,
+        createdAt: true,
+        updatedAt: true,
+      }
+    });
+    return user;
   }
 
   async findById(id: number) {
-    return this.prisma.user.findUnique({ where: { id } });
+    return this.prisma.user.findUnique({ 
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        allergies: true,
+        photoUri: true,
+        createdAt: true,
+        updatedAt: true,
+      }
+    });
   }
 
   async updateUser(id: number, data: {

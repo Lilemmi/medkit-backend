@@ -22,7 +22,10 @@ export class AuthService {
 
     const token = await this.jwt.signAsync({ sub: user.id });
 
-    return { user, token };
+    // Убираем пароль из ответа
+    const { password: _, ...userWithoutPassword } = user;
+
+    return { user: userWithoutPassword, token };
   }
 
   async login(email: string, password: string) {
@@ -34,7 +37,10 @@ export class AuthService {
 
     const token = await this.jwt.signAsync({ sub: user.id });
 
-    return { user, token };
+    // Убираем пароль из ответа
+    const { password: _, ...userWithoutPassword } = user;
+
+    return { user: userWithoutPassword, token };
   }
 
   async getProfile(userId: number) {

@@ -3,6 +3,10 @@
 /node_modules
 /build
 
+# Android build files (should not be in backend)
+/android
+/app.json
+
 # Logs
 logs
 *.log
@@ -41,6 +45,19 @@ lerna-debug.log*
 .env.test.local
 .env.production.local
 .env.local
+
+# Documentation files (keep only README.md)
+*.md
+!README.md
+
+# Scripts (keep only necessary)
+*.ps1
+!railway-migrate.ps1
+
+# Temporary files
+*.tmp
+*.temp
+*.log
 
 # temp directory
 .temp
