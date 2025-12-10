@@ -35,8 +35,20 @@ export class AuthController {
       console.error('❌ REGISTER: password is undefined!', { dto });
       throw new BadRequestException('Password is required');
     }
+    if (!dto.gender || dto.gender === undefined) {
+      console.error('❌ REGISTER: gender is undefined!', { dto });
+      throw new BadRequestException('Gender is required');
+    }
+    if (!dto.allergies || dto.allergies === undefined) {
+      console.error('❌ REGISTER: allergies is undefined!', { dto });
+      throw new BadRequestException('Allergies is required');
+    }
+    if (!dto.birthDate || dto.birthDate === undefined) {
+      console.error('❌ REGISTER: birthDate is undefined!', { dto });
+      throw new BadRequestException('Birth date is required');
+    }
     
-    return this.auth.register(dto.name, dto.email, dto.password);
+    return this.auth.register(dto.name, dto.email, dto.password, dto.gender, dto.allergies, dto.birthDate);
   }
 
   @Public() // Публичный маршрут - не требует аутентификации

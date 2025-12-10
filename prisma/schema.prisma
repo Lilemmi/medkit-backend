@@ -15,6 +15,18 @@ model User {
   phone     String?
   allergies String?
   photoUri  String?
+  
+  // Основная информация
+  birthDate DateTime? // Дата рождения
+  gender    String?  // Пол: "male", "female", "other"
+  
+  // Медицинская информация
+  weight    Float?   // Вес в кг
+  height    Float?   // Рост в см
+  chronicDiseases Json? // Хронические заболевания (массив строк)
+  medicalConditions Json? // Особые состояния: беременность, диабет, астма и т.д. (массив строк)
+  organConditions Json? // Состояния органов, влияющие на дозы: печень, почки и т.д. (массив строк)
+  
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   medicines Medicine[]

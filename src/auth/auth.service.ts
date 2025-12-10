@@ -10,7 +10,7 @@ export class AuthService {
     private jwt: JwtService
   ) {}
 
-  async register(name: string, email: string, password: string) {
+  async register(name: string, email: string, password: string, gender: string, allergies: string, birthDate: string) {
     const existing = await this.usersService.findByEmail(email);
 
     if (existing) {
@@ -18,7 +18,11 @@ export class AuthService {
     }
 
     const hashed = await bcrypt.hash(password, 10);
-    const user = await this.usersService.createUser(name, email, hashed);
+    
+    // Преобразуем дату рождения в Date объект
+    const birthDateObj = birthDate ? new Date(birthDate) : null;
+    
+    const user = await this.usersService.createUser(name, email, hashed, gender, allergies, birthDateObj);
 
     const token = await this.jwt.signAsync({ sub: user.id });
 
