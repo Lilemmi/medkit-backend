@@ -13,25 +13,64 @@ export class MedicinesService {
   }
 
   async create(userId: number, dto) {
-    const medicine = await this.prisma.medicine.create({
-      data: {
-        ...dto,
+    try {
+      // Логируем входящие данные для отладки
+      console.log('📥 CREATE MEDICINE REQUEST:', {
         userId,
-      },
-    });
+        dto: {
+          ...dto,
+          expiry: dto.expiry ? `${dto.expiry} (type: ${typeof dto.expiry})` : null,
+        },
+      });
 
-    // Записываем в историю
-    await this.prisma.inventoryHistory.create({
-      data: {
-        userId,
-        medicineId: medicine.id,
-        action: 'created',
-        newData: medicine,
-        description: `Лекарство "${medicine.name || 'Без названия'}" добавлено в инвентарь`,
-      },
-    });
+      // Преобразуем expiry в Date объект, если это строка
+      const data: any = { ...dto, userId };
+      if (data.expiry && typeof data.expiry === 'string') {
+        try {
+          const expiryDate = new Date(data.expiry);
+          if (!isNaN(expiryDate.getTime())) {
+            data.expiry = expiryDate;
+          } else {
+            console.warn('⚠️ Невалидная дата expiry:', data.expiry);
+            data.expiry = null;
+          }
+        } catch (error) {
+          console.error('❌ Ошибка преобразования даты:', error);
+          data.expiry = null;
+        }
+      }
 
-    return medicine;
+      const medicine = await this.prisma.medicine.create({
+        data,
+      });
+
+      // Записываем в историю
+      try {
+        await this.prisma.inventoryHistory.create({
+          data: {
+            userId,
+            medicineId: medicine.id,
+            action: 'created',
+            newData: medicine,
+            description: `Лекарство "${medicine.name || 'Без названия'}" добавлено в инвентарь`,
+          },
+        });
+      } catch (historyError) {
+        // Логируем ошибку истории, но не прерываем создание лекарства
+        console.error('❌ Ошибка создания истории для лекарства:', historyError);
+      }
+
+      return medicine;
+    } catch (error) {
+      console.error('❌ Ошибка создания лекарства:', error);
+      console.error('❌ Детали ошибки:', {
+        message: error?.message,
+        code: error?.code,
+        meta: error?.meta,
+        stack: error?.stack,
+      });
+      throw error;
+    }
   }
 
   async delete(userId: number, id: number) {
