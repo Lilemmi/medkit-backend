@@ -11,34 +11,53 @@ export class UsersService {
   }
 
   async createUser(name: string, email: string, password: string, gender?: string, allergies?: string, birthDate?: Date) {
-    const user = await this.prisma.user.create({ 
-      data: {
+    try {
+      console.log('👤 UsersService.createUser called with:', {
         name,
         email,
-        password,
-        gender: gender || null,
-        allergies: allergies || null,
-        birthDate: birthDate || null,
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        phone: true,
-        allergies: true,
-        photoUri: true,
-        birthDate: true,
-        gender: true,
-        weight: true,
-        height: true,
-        chronicDiseases: true,
-        medicalConditions: true,
-        organConditions: true,
-        createdAt: true,
-        updatedAt: true,
-      }
-    });
-    return user;
+        password: password ? '***' : undefined,
+        gender,
+        allergies,
+        birthDate: birthDate?.toISOString() || null,
+      });
+
+      const user = await this.prisma.user.create({ 
+        data: {
+          name,
+          email,
+          password,
+          gender: gender || null,
+          allergies: allergies || null,
+          birthDate: birthDate || null,
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          allergies: true,
+          photoUri: true,
+          birthDate: true,
+          gender: true,
+          weight: true,
+          height: true,
+          chronicDiseases: true,
+          medicalConditions: true,
+          organConditions: true,
+          createdAt: true,
+          updatedAt: true,
+        }
+      });
+
+      console.log('✅ User created successfully:', { id: user.id, email: user.email });
+      return user;
+    } catch (error) {
+      console.error('❌ UsersService.createUser error:', error);
+      console.error('❌ Error code:', error?.code);
+      console.error('❌ Error message:', error?.message);
+      console.error('❌ Error meta:', error?.meta);
+      throw error;
+    }
   }
 
   async findById(id: number) {

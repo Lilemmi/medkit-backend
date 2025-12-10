@@ -11,23 +11,69 @@ export class AuthService {
   ) {}
 
   async register(name: string, email: string, password: string, gender: string, allergies: string, birthDate: string) {
-    const existing = await this.usersService.findByEmail(email);
+    try {
+      console.log('🔐 AuthService.register called with:', {
+        name,
+        email,
+        password: password ? '***' : undefined,
+        gender,
+        allergies,
+        birthDate,
+      });
 
-    if (existing) {
-      throw new BadRequestException('Email уже зарегистрирован');
+      const existing = await this.usersService.findByEmail(email);
+
+      if (existing) {
+        throw new BadRequestException('Email уже зарегистрирован');
+      }
+
+      const hashed = await bcrypt.hash(password, 10);
+      
+      // Преобразуем дату рождения в Date объект
+      let birthDateObj: Date | null = null;
+      if (birthDate) {
+        try {
+          birthDateObj = new Date(birthDate);
+          // Проверяем, что дата валидна
+          if (isNaN(birthDateObj.getTime())) {
+            console.error('❌ Invalid birthDate:', birthDate);
+            throw new BadRequestException('Неверный формат даты рождения');
+          }
+          console.log('✅ Parsed birthDate:', birthDateObj.toISOString());
+        } catch (error) {
+          console.error('❌ Error parsing birthDate:', error);
+          throw new BadRequestException('Неверный формат даты рождения');
+        }
+      }
+      
+      console.log('📝 Creating user with data:', {
+        name,
+        email,
+        gender,
+        allergies,
+        birthDate: birthDateObj?.toISOString() || null,
+      });
+
+      const user = await this.usersService.createUser(name, email, hashed, gender, allergies, birthDateObj);
+
+      console.log('✅ User created:', { id: user.id, email: user.email });
+
+      const token = await this.jwt.signAsync({ sub: user.id });
+
+      console.log('✅ Token generated for user:', user.id);
+
+      // createUser уже не возвращает password (использует select)
+      return { user, token };
+    } catch (error) {
+      console.error('❌ AuthService.register error:', error);
+      console.error('❌ Error stack:', error?.stack);
+      // Если это уже BadRequestException, пробрасываем дальше
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      // Для других ошибок выбрасываем общую ошибку
+      throw new BadRequestException(`Ошибка при регистрации: ${error?.message || 'Unknown error'}`);
     }
-
-    const hashed = await bcrypt.hash(password, 10);
-    
-    // Преобразуем дату рождения в Date объект
-    const birthDateObj = birthDate ? new Date(birthDate) : null;
-    
-    const user = await this.usersService.createUser(name, email, hashed, gender, allergies, birthDateObj);
-
-    const token = await this.jwt.signAsync({ sub: user.id });
-
-    // createUser уже не возвращает password (использует select)
-    return { user, token };
   }
 
   async login(email: string, password: string) {
