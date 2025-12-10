@@ -1,6 +1,5 @@
-import { Body, Controller, Get, NotFoundException, Patch, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, NotFoundException, Patch } from '@nestjs/common';
 import { User } from '../auth/decorators/user.decorator';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
@@ -9,7 +8,7 @@ import { UsersService } from './users.service';
 export class UserController {
   constructor(private usersService: UsersService) {}
 
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard) - не нужен, так как guard применяется глобально
   @Get('profile')
   async getProfile(@User() user: any) {
     const userData = await this.usersService.findById(user.id);
@@ -20,7 +19,7 @@ export class UserController {
     return userData;
   }
 
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard) - не нужен, так как guard применяется глобально
   @Patch('me')
   async updateProfile(@User() user: any, @Body() updateDto: UpdateUserDto) {
     const updatedUser = await this.usersService.updateUser(user.id, updateDto);
@@ -28,7 +27,7 @@ export class UserController {
     return updatedUser;
   }
 
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard) - не нужен, так как guard применяется глобально
   @Patch('me/password')
   async changePassword(@User() user: any, @Body() changePasswordDto: ChangePasswordDto) {
     await this.usersService.changePassword(

@@ -1,6 +1,7 @@
 import { BadRequestException, Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { User } from './decorators/user.decorator';
+import { Public } from './decorators/public.decorator';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -9,6 +10,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 export class AuthController {
   constructor(private auth: AuthService) {}
 
+  @Public() // Публичный маршрут - не требует аутентификации
   @Post('register')
   register(@Body() dto: RegisterDto) {
     // Логируем, что пришло на бэкенд
@@ -37,6 +39,7 @@ export class AuthController {
     return this.auth.register(dto.name, dto.email, dto.password);
   }
 
+  @Public() // Публичный маршрут - не требует аутентификации
   @Post('login')
   login(@Body() dto: LoginDto) {
     // Логируем, что пришло на бэкенд
@@ -60,7 +63,7 @@ export class AuthController {
     return this.auth.login(dto.email, dto.password);
   }
 
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard) - не нужен, так как guard применяется глобально
   @Get('me')
   me(@User() user: any) {
     return this.auth.getProfile(user.id);

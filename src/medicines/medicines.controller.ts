@@ -1,54 +1,60 @@
 import { Body, Controller, Delete, Get, Param, Post, Put } from "@nestjs/common";
 import { MedicinesService } from "./medicines.service";
+import { User } from "../auth/decorators/user.decorator";
 
 @Controller("medicines")
+// JwtAuthGuard применяется глобально, не нужно указывать здесь
 export class MedicinesController {
   constructor(private service: MedicinesService) {}
 
-  @Get(":userId")
-  getAll(@Param("userId") userId: string) {
-    return this.service.getAll(Number(userId));
+  @Get()
+  getAll(@User() user: any) {
+    // userId берется из токена, а не из URL параметров
+    return this.service.getAll(user.id);
   }
 
-  @Post(":userId")
-  create(@Param("userId") userId: string, @Body() dto) {
-    return this.service.create(Number(userId), dto);
+  @Post()
+  create(@User() user: any, @Body() dto) {
+    // userId берется из токена
+    return this.service.create(user.id, dto);
   }
 
-  @Put(":userId/:id")
+  @Put(":id")
   update(
-    @Param("userId") userId: string,
+    @User() user: any,
     @Param("id") id: string,
     @Body() dto
   ) {
-    return this.service.update(Number(userId), Number(id), dto);
+    // userId берется из токена, проверка прав доступа выполняется в сервисе
+    return this.service.update(user.id, Number(id), dto);
   }
 
-  @Delete(":userId/:id")
-  delete(@Param("userId") userId: string, @Param("id") id: string) {
-    return this.service.delete(Number(userId), Number(id));
+  @Delete(":id")
+  delete(@User() user: any, @Param("id") id: string) {
+    // userId берется из токена, проверка прав доступа выполняется в сервисе
+    return this.service.delete(user.id, Number(id));
   }
 
-  @Get(":userId/expired")
-  getExpired(@Param("userId") userId: string) {
-    return this.service.expired(Number(userId));
+  @Get("expired")
+  getExpired(@User() user: any) {
+    return this.service.expired(user.id);
   }
 
-  @Get(":userId/soon")
-  getExpiringSoon(@Param("userId") userId: string) {
-    return this.service.expiringSoon(Number(userId));
+  @Get("soon")
+  getExpiringSoon(@User() user: any) {
+    return this.service.expiringSoon(user.id);
   }
 
-  @Get(":userId/history")
-  getInventoryHistory(@Param("userId") userId: string) {
-    return this.service.getInventoryHistory(Number(userId));
+  @Get("history")
+  getInventoryHistory(@User() user: any) {
+    return this.service.getInventoryHistory(user.id);
   }
 
-  @Get(":userId/history/:medicineId")
+  @Get("history/:medicineId")
   getMedicineHistory(
-    @Param("userId") userId: string,
+    @User() user: any,
     @Param("medicineId") medicineId: string
   ) {
-    return this.service.getMedicineHistory(Number(userId), Number(medicineId));
+    return this.service.getMedicineHistory(user.id, Number(medicineId));
   }
 }
