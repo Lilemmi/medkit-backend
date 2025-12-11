@@ -74,61 +74,108 @@ export class MedicinesService {
   }
 
   async delete(userId: number, id: number) {
-    // Получаем данные перед удалением
-    const medicine = await this.prisma.medicine.findFirst({
-      where: { id, userId },
-    });
+    try {
+      // Получаем данные перед удалением
+      const medicine = await this.prisma.medicine.findFirst({
+        where: { id, userId },
+      });
 
-    if (!medicine) {
-      throw new NotFoundException('Medicine not found');
-    }
+      if (!medicine) {
+        throw new NotFoundException('Medicine not found');
+      }
 
-    await this.prisma.medicine.delete({
-      where: { id, userId },
-    });
+      // Записываем в историю ПЕРЕД удалением, чтобы medicineId был валидным
+      try {
+        await this.prisma.inventoryHistory.create({
+          data: {
+            userId,
+            medicineId: id,
+            action: 'deleted',
+            oldData: medicine,
+            description: `Лекарство "${medicine.name || 'Без названия'}" удалено из инвентаря`,
+          },
+        });
+      } catch (historyError) {
+        // Логируем ошибку истории, но не прерываем удаление лекарства
+        console.error('❌ Ошибка создания истории при удалении лекарства:', historyError);
+        console.error('❌ Детали ошибки истории:', {
+          message: historyError?.message,
+          code: historyError?.code,
+          meta: historyError?.meta,
+        });
+      }
 
-    // Записываем в историю
-    await this.prisma.inventoryHistory.create({
-      data: {
+      // Удаляем лекарство
+      await this.prisma.medicine.delete({
+        where: { id, userId },
+      });
+
+      return medicine;
+    } catch (error) {
+      console.error('❌ Ошибка удаления лекарства:', error);
+      console.error('❌ Детали ошибки:', {
         userId,
         medicineId: id,
-        action: 'deleted',
-        oldData: medicine,
-        description: `Лекарство "${medicine.name || 'Без названия'}" удалено из инвентаря`,
-      },
-    });
-
-    return medicine;
+        message: error?.message,
+        code: error?.code,
+        meta: error?.meta,
+        stack: error?.stack,
+      });
+      throw error;
+    }
   }
 
   async update(userId: number, id: number, dto) {
-    // Получаем старые данные
-    const oldMedicine = await this.prisma.medicine.findFirst({
-      where: { id, userId },
-    });
+    try {
+      // Получаем старые данные
+      const oldMedicine = await this.prisma.medicine.findFirst({
+        where: { id, userId },
+      });
 
-    if (!oldMedicine) {
-      throw new NotFoundException('Medicine not found');
-    }
+      if (!oldMedicine) {
+        throw new NotFoundException('Medicine not found');
+      }
 
-    const updatedMedicine = await this.prisma.medicine.update({
-      where: { id, userId },
-      data: dto,
-    });
+      const updatedMedicine = await this.prisma.medicine.update({
+        where: { id, userId },
+        data: dto,
+      });
 
-    // Записываем в историю
-    await this.prisma.inventoryHistory.create({
-      data: {
+      // Записываем в историю
+      try {
+        await this.prisma.inventoryHistory.create({
+          data: {
+            userId,
+            medicineId: id,
+            action: 'updated',
+            oldData: oldMedicine,
+            newData: updatedMedicine,
+            description: `Лекарство "${updatedMedicine.name || 'Без названия'}" обновлено`,
+          },
+        });
+      } catch (historyError) {
+        // Логируем ошибку истории, но не прерываем обновление лекарства
+        console.error('❌ Ошибка создания истории при обновлении лекарства:', historyError);
+        console.error('❌ Детали ошибки истории:', {
+          message: historyError?.message,
+          code: historyError?.code,
+          meta: historyError?.meta,
+        });
+      }
+
+      return updatedMedicine;
+    } catch (error) {
+      console.error('❌ Ошибка обновления лекарства:', error);
+      console.error('❌ Детали ошибки:', {
         userId,
         medicineId: id,
-        action: 'updated',
-        oldData: oldMedicine,
-        newData: updatedMedicine,
-        description: `Лекарство "${updatedMedicine.name || 'Без названия'}" обновлено`,
-      },
-    });
-
-    return updatedMedicine;
+        message: error?.message,
+        code: error?.code,
+        meta: error?.meta,
+        stack: error?.stack,
+      });
+      throw error;
+    }
   }
 
   async expired(userId: number) {

@@ -30,9 +30,14 @@ export class MedicinesController {
   }
 
   @Delete(":id")
-  delete(@User() user: any, @Param("id") id: string) {
+  async delete(@User() user: any, @Param("id") id: string) {
     // userId берется из токена, проверка прав доступа выполняется в сервисе
-    return this.service.delete(user.id, Number(id));
+    try {
+      return await this.service.delete(user.id, Number(id));
+    } catch (error) {
+      console.error('❌ Ошибка в контроллере при удалении лекарства:', error);
+      throw error;
+    }
   }
 
   @Get("expired")
