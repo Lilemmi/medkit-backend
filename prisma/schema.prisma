@@ -86,6 +86,8 @@ model Medicine {
   sideEffectsDetailed       Json?    // JSON детальные побочные эффекты
   storageConditionsDetailed Json?   // JSON детальные условия хранения
   additionalRecommendations Json?   // JSON дополнительные рекомендации
+  specialGroupsInfo          Json?    // JSON информация для специальных групп (беременные, кормящие, дети, пожилые, хронические болезни)
+  analogs                    Json?    // JSON аналоги и заменители препарата
   
   @@index([userId])
   @@index([expiry])
