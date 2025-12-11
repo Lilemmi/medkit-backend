@@ -7,3 +7,5 @@ ADD COLUMN IF NOT EXISTS "chronicDiseases" JSONB,
 ADD COLUMN IF NOT EXISTS "medicalConditions" JSONB,
 ADD COLUMN IF NOT EXISTS "organConditions" JSONB;
 
+
+

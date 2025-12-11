@@ -40,6 +40,10 @@ export class MedicinesService {
         }
       }
 
+      // Удаляем serverId из данных, так как это поле генерируется сервером
+      delete data.serverId;
+      delete data.syncedAt;
+
       const medicine = await this.prisma.medicine.create({
         data,
       });
@@ -136,9 +140,33 @@ export class MedicinesService {
         throw new NotFoundException('Medicine not found');
       }
 
+      // Преобразуем expiry в Date объект, если это строка
+      const updateData: any = { ...dto };
+      if (updateData.expiry && typeof updateData.expiry === 'string') {
+        try {
+          const expiryDate = new Date(updateData.expiry);
+          if (!isNaN(expiryDate.getTime())) {
+            updateData.expiry = expiryDate;
+          } else {
+            console.warn('⚠️ Невалидная дата expiry:', updateData.expiry);
+            updateData.expiry = null;
+          }
+        } catch (error) {
+          console.error('❌ Ошибка преобразования даты:', error);
+          updateData.expiry = null;
+        }
+      }
+
+      // Удаляем serverId и syncedAt из данных обновления
+      delete updateData.serverId;
+      delete updateData.syncedAt;
+      delete updateData.id;
+      delete updateData.userId;
+      delete updateData.createdAt;
+
       const updatedMedicine = await this.prisma.medicine.update({
         where: { id, userId },
-        data: dto,
+        data: updateData,
       });
 
       // Записываем в историю

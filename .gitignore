@@ -46,9 +46,10 @@ lerna-debug.log*
 .env.production.local
 .env.local
 
-# Documentation files (keep only README.md)
+# Documentation files (keep only README.md and DATABASE_UPDATE.md)
 *.md
 !README.md
+!DATABASE_UPDATE.md
 
 # Scripts (keep only necessary)
 *.ps1

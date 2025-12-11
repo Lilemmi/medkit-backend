@@ -40,8 +40,19 @@ PORT=3000
 ### Миграции
 
 ```bash
+# Применить все миграции
 npx prisma migrate deploy
+
+# Для разработки (создает новую миграцию)
+npx prisma migrate dev
+
+# Сгенерировать Prisma Client
+npx prisma generate
 ```
+
+**Важно:** После обновления схемы Prisma обязательно выполните `npx prisma generate` для обновления клиента.
+
+См. также [DATABASE_UPDATE.md](./DATABASE_UPDATE.md) для информации о последних изменениях схемы базы данных.
 
 ### Запуск
 

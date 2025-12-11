@@ -48,6 +48,45 @@ model Medicine {
   updatedAt DateTime @updatedAt
   inventoryHistory InventoryHistory[]
   
+  // Параметры приема лекарства
+  takeWithFood          String?  // до еды, после еды, во время еды, независимо
+  takeWithLiquid        String?  // чем запивать (вода, молоко и т.д.)
+  incompatibleMedicines Json?    // JSON массив названий несовместимых препаратов
+  compatibleMedicines   Json?    // JSON массив с информацией о совместимых препаратах
+  forbiddenFoods        Json?    // JSON массив запрещенных продуктов
+  recommendedFoods      Json?    // JSON массив рекомендуемых продуктов
+  alcoholInteraction    String?  // взаимодействие с алкоголем
+  caffeineInteraction   String?  // взаимодействие с кофе/чаем
+  storageConditions     String?  // условия хранения
+  specialInstructions   String?  // особые указания
+  sideEffects           String?  // побочные эффекты
+  contraindications     String?  // противопоказания
+  
+  // Количество и учет
+  quantity          Int?     // количество упаковок
+  totalPills        Int?     // общее количество таблеток в упаковке
+  usedPills         Int?     // использовано таблеток
+  lowStockThreshold Int?     // порог для уведомления о низком количестве (по умолчанию 10)
+  familyMemberId    Int?     // ID члена семьи, для кого предназначено лекарство (null = для пользователя)
+  userDosage        String?  // дозировка для конкретного пользователя/члена семьи
+  
+  // Расширенная информация о лекарстве
+  internationalName         String?  // Международное непатентованное название (МНН)
+  manufacturer              String?  // Производитель
+  packageVolume             String?  // Объём / количество в упаковке
+  category                  String?  // Категория лекарства
+  activeIngredients         Json?    // JSON массив активных веществ
+  indications              Json?    // JSON показания к применению
+  contraindicationsDetailed Json?   // JSON детальные противопоказания
+  warnings                  Json?    // JSON предупреждения и риски
+  foodCompatibility         Json?    // JSON совместимость с едой
+  drugCompatibility         Json?    // JSON совместимость с другими препаратами
+  dosageDetailed            Json?    // JSON детальная дозировка
+  childrenRestrictions      Json?    // JSON ограничения для детей
+  sideEffectsDetailed       Json?    // JSON детальные побочные эффекты
+  storageConditionsDetailed Json?   // JSON детальные условия хранения
+  additionalRecommendations Json?   // JSON дополнительные рекомендации
+  
   @@index([userId])
   @@index([expiry])
 }
