@@ -40,6 +40,40 @@ export class MedicinesService {
         }
       }
 
+      // Преобразуем JSON строки в объекты для полей типа Json в Prisma
+      // Поля, которые должны быть Json объектами (не строками) для Prisma
+      const jsonFields = [
+        'incompatibleMedicines',
+        'compatibleMedicines',
+        'forbiddenFoods',
+        'recommendedFoods',
+        'activeIngredients',
+        'indications',
+        'contraindicationsDetailed',
+        'warnings',
+        'foodCompatibility',
+        'drugCompatibility',
+        'dosageDetailed',
+        'childrenRestrictions',
+        'sideEffectsDetailed',
+        'storageConditionsDetailed',
+        'additionalRecommendations',
+        'specialGroupsInfo',
+        'analogs',
+      ];
+
+      for (const field of jsonFields) {
+        if (data[field] && typeof data[field] === 'string') {
+          try {
+            data[field] = JSON.parse(data[field]);
+          } catch (error) {
+            console.warn(`⚠️ Не удалось распарсить JSON для поля ${field}:`, error);
+            // Если не удалось распарсить, оставляем как строку или null
+            data[field] = null;
+          }
+        }
+      }
+
       // Удаляем serverId из данных, так как это поле генерируется сервером
       delete data.serverId;
       delete data.syncedAt;

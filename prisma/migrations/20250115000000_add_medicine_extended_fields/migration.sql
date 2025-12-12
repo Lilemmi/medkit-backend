@@ -32,3 +32,6 @@ ADD COLUMN IF NOT EXISTS "childrenRestrictions" JSONB,
 ADD COLUMN IF NOT EXISTS "sideEffectsDetailed" JSONB,
 ADD COLUMN IF NOT EXISTS "storageConditionsDetailed" JSONB,
 ADD COLUMN IF NOT EXISTS "additionalRecommendations" JSONB;
+
+
+

@@ -89,3 +89,6 @@ npx prisma validate
 # Открыть Prisma Studio для просмотра данных
 npx prisma studio
 ```
+
+
+
