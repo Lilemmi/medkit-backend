@@ -37,8 +37,11 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
 .env*.local
-# Но .env должен быть в репозитории для примера
+.env.production
+.env.development
+# Но .env.example должен быть в репозитории для примера
 !.env.example
 
 # typescript
