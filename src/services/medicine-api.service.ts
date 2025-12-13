@@ -9,10 +9,49 @@ export interface MedicineIngredients {
 /**
  * Получить состав лекарства по названию
  * @param medicineName - Название лекарства
+ * @param activeIngredientsFromDB - Активные ингредиенты из базы данных (если есть)
  * @returns Состав лекарства (активные и вспомогательные вещества)
  */
-export async function getMedicineIngredients(medicineName: string): Promise<MedicineIngredients> {
+export async function getMedicineIngredients(
+  medicineName: string,
+  activeIngredientsFromDB?: string[] | any
+): Promise<MedicineIngredients> {
   try {
+    // Если есть активные ингредиенты из базы данных, используем их
+    if (activeIngredientsFromDB && Array.isArray(activeIngredientsFromDB) && activeIngredientsFromDB.length > 0) {
+      return {
+        activeIngredients: activeIngredientsFromDB.map((ing: any) => {
+          // Если это объект с полем name, извлекаем название
+          if (ing && typeof ing === 'object' && ing.name) {
+            return String(ing.name);
+          }
+          return typeof ing === 'string' ? ing : String(ing);
+        }),
+        inactiveIngredients: []
+      };
+    }
+
+    // Если activeIngredientsFromDB это JSON строка, парсим её
+    if (activeIngredientsFromDB && typeof activeIngredientsFromDB === 'string') {
+      try {
+        const parsed = JSON.parse(activeIngredientsFromDB);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return {
+            activeIngredients: parsed.map((ing: any) => {
+              // Если это объект с полем name, извлекаем название
+              if (ing && typeof ing === 'object' && ing.name) {
+                return String(ing.name);
+              }
+              return String(ing);
+            }),
+            inactiveIngredients: []
+          };
+        }
+      } catch (e) {
+        // Если не JSON, игнорируем
+      }
+    }
+
     // TODO: В реальном приложении здесь будет запрос к API базы данных лекарств
     // Например: https://api.fda.gov/drug/label.json?search=openfda.brand_name:"${medicineName}"
     // Или другой API для получения состава лекарств
@@ -80,6 +119,12 @@ function mockGetIngredients(medicineName: string): MedicineIngredients {
     inactiveIngredients: [],
   };
 }
+
+
+
+
+
+
 
 
 

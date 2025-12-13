@@ -17,6 +17,12 @@ expo-env.d.ts
 *.p12
 *.key
 *.mobileprovision
+keystore.properties
+
+# Gradle build cache
+android/.gradle/
+android/**/.gradle/
+*.lock
 
 # Metro
 .metro-health-check*
@@ -38,7 +44,10 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-app-example
+# Old project artifacts
+app-example/
+MyProject/
+smart-aid-kit/
 
 # generated native folders
 /ios

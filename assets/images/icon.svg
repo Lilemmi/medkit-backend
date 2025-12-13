@@ -1,0 +1,100 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Градиент для фона (голубой к бирюзовому) -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4DD0E1;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#26C6DA;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00BCD4;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Градиент для белого креста (3D эффект) -->
+    <linearGradient id="crossGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#F5F5F5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#E0E0E0;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Градиент для сердца -->
+    <linearGradient id="heartGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00ACC1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00838F;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Тень для креста -->
+    <filter id="crossShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="30"/>
+      <feOffset dx="8" dy="12" result="offsetblur"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.5"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    
+    <!-- Тень для сердца -->
+    <filter id="heartShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="15"/>
+      <feOffset dx="4" dy="6" result="offsetblur"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.6"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    
+    <!-- Тень для точек -->
+    <filter id="dotShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="8"/>
+      <feOffset dx="3" dy="4" result="offsetblur"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.5"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Фон с градиентом и скругленными углами -->
+  <rect width="1024" height="1024" rx="240" fill="url(#bgGradient)"/>
+  
+  <!-- Медицинский крест (белый с 3D эффектом) -->
+  <g filter="url(#crossShadow)">
+    <!-- Вертикальная часть креста -->
+    <rect x="380" y="220" width="264" height="584" rx="60" fill="url(#crossGradient)"/>
+    
+    <!-- Горизонтальная часть креста -->
+    <rect x="220" y="380" width="584" height="264" rx="60" fill="url(#crossGradient)"/>
+  </g>
+  
+  <!-- Сердце с линией пульса внутри креста -->
+  <g filter="url(#heartShadow)" transform="translate(512, 512)">
+    <!-- Контур сердца (бирюзовый) -->
+    <path d="M-80,-20 C-100,-60 -140,-60 -140,-20 C-140,20 -80,80 0,120 C80,80 140,20 140,-20 C140,-60 100,-60 80,-20 C60,-40 20,-40 0,-20 C-20,-40 -60,-40 -80,-20 Z" 
+          fill="url(#heartGradient)" 
+          stroke="#00ACC1" 
+          stroke-width="8"/>
+    
+    <!-- Линия пульса (белая) -->
+    <path d="M-100,20 L-80,0 L-60,40 L-40,-20 L-20,60 L0,20 L20,0 L40,40 L60,-20 L80,60 L100,20" 
+          fill="none" 
+          stroke="white" 
+          stroke-width="12" 
+          stroke-linecap="round" 
+          stroke-linejoin="round"/>
+  </g>
+  
+  <!-- Две маленькие точки на горизонтальных руках креста -->
+  <g filter="url(#dotShadow)">
+    <!-- Левая точка -->
+    <circle cx="280" cy="512" r="32" fill="url(#crossGradient)"/>
+    
+    <!-- Правая точка -->
+    <circle cx="744" cy="512" r="32" fill="url(#crossGradient)"/>
+  </g>
+</svg>

@@ -17,7 +17,8 @@
     "yes": "כן",
     "no": "לא",
     "ok": "אישור",
-    "optional": "אופציונלי"
+    "optional": "אופציונלי",
+    "grantPermission": "הענק הרשאה"
   },
   "tabs": {
     "medkit": "ראשי",
@@ -34,6 +35,7 @@
     "description": "צפה בלוח הזמנים היומי של התרופות שלך וסמן תרופות שנלקחו",
     "addMedication": "הוסף תרופות",
     "scanPrescription": "סורק מרשמים",
+    "schedule": "לוח זמנים לתרופות",
     "today": "היום",
     "days": {
       "mon": "ב'",
@@ -45,18 +47,18 @@
       "sun": "א'"
     },
     "months": {
-      "jan": "ינו",
-      "feb": "פבר",
+      "jan": "ינואר",
+      "feb": "פברואר",
       "mar": "מרץ",
-      "apr": "אפר",
+      "apr": "אפריל",
       "may": "מאי",
-      "jun": "יונ",
-      "jul": "יול",
-      "aug": "אוג",
-      "sep": "ספט",
-      "oct": "אוק",
-      "nov": "נוב",
-      "dec": "דצמ"
+      "jun": "יוני",
+      "jul": "יולי",
+      "aug": "אוגוסט",
+      "sep": "ספטמבר",
+      "oct": "אוקטובר",
+      "nov": "נובמבר",
+      "dec": "דצמבר"
     },
     "logoutTitle": "התנתקות",
     "logoutConfirm": "האם אתה בטוח שברצונך להתנתק?",
@@ -76,7 +78,34 @@
     "logout": "התנתק",
     "logoutConfirm": "האם אתה בטוח שברצונך להתנתק?",
     "logoutTitle": "התנתקות",
-    "help": "עזרה ותמיכה"
+    "help": "עזרה ותמיכה",
+    "notifications": "התראות",
+    "notificationSettings": "הגדרות התראות",
+    "enableNotifications": "הפעל התראות",
+    "enableNotificationsDescription": "אפשר לאפליקציה לשלוח התראות",
+    "soundAndVibration": "צליל ורטט",
+    "enableSound": "הפעל צליל",
+    "enableSoundDescription": "נגן צליל בעת קבלת התראות",
+    "enableVibration": "הפעל רטט",
+    "enableVibrationDescription": "רטט בעת קבלת התראות",
+    "enableLights": "הפעל נורית LED",
+    "enableLightsDescription": "הבהב נורית LED להתראות (Android)",
+    "additionalSettings": "הגדרות נוספות",
+    "enableBadge": "הצג סמל",
+    "enableBadgeDescription": "הצג מספר התראות שלא נקראו על הסמל",
+    "showOnLockScreen": "הצג במסך נעילה",
+    "showOnLockScreenDescription": "הצג התראות במסך נעילה",
+    "generalSettings": "הגדרות כלליות",
+    "notificationsGranted": "הרשאה ניתנה",
+    "notificationsDenied": "הרשאה נדחתה",
+    "notificationsNotRequested": "הרשאה לא התבקשה",
+    "notificationPermissionStatus": "סטטוס הרשאה",
+    "requestNotificationPermission": "בקש הרשאה",
+    "notificationPermissionTitle": "הרשאת התראות",
+    "notificationPermissionMessage": "נדרשת הרשאת התראות בהגדרות המכשיר",
+    "notificationSaveError": "נכשל בשמירת הגדרות",
+    "notificationChannelName": "תזכורות תרופות",
+    "notificationChannelDescription": "תזכורות קריטיות לתרופות"
   },
   "add": {
     "title": "הוסף תרופה",
@@ -115,6 +144,7 @@
   "medicines": {
     "empty": "ערכת עזרה ראשונה ריקה",
     "emptySubtext": "הוסף את התרופה הראשונה שלך",
+    "medicine": "תרופה",
     "dosage": "מינון:",
     "form": "צורה:",
     "expiry": "תפוגה:",
@@ -128,6 +158,37 @@
     "noExpiryMessage": "תאריך תפוגה לא צוין",
     "notificationSet": "התראה הוגדרה",
     "notificationMessage": "אזכיר לך בעוד יומיים 👍"
+  },
+  "medicineDetails": {
+    "sideEffects": "תופעות לוואי",
+    "contraindications": "התוויות נגד",
+    "mild": "קל",
+    "moderate": "בינוני",
+    "severe": "חמור",
+    "frequency": "תדירות",
+    "pregnancy": "הריון",
+    "lactation": "הנקה",
+    "hypertension": "יתר לחץ דם",
+    "asthma": "אסטמה",
+    "diabetes": "סוכרת",
+    "kidneyDisease": "מחלת כליות",
+    "liverDisease": "מחלת כבד",
+    "heartDisease": "מחלת לב",
+    "cardiovascularDiseases": "מחלות לב וכלי דם",
+    "gastrointestinalDiseases": "מחלות מערכת העיכול",
+    "ageRestrictions": "הגבלות גיל",
+    "allergies": "אלרגיות",
+    "other": "אחר"
+  },
+  "schedule": {
+    "title": "לוח זמנים לתרופות",
+    "markAsTaken": "סמן כלקוח",
+    "markAsTakenQuestion": "האם לקחת {{medicineName}}?",
+    "taken": "נלקח",
+    "missed": "הוחמץ",
+    "soon": "בקרוב",
+    "markError": "שגיאה",
+    "markErrorMessage": "נכשל בסימון התרופה כלקוח"
   },
   "auth": {
     "login": "התחברות",
@@ -352,16 +413,16 @@
     "appVersion": "גרסת אפליקציה",
     "expoVersion": "גרסת Expo",
     "aboutMedkit": "אודות Smart Aid Kit",
-    "description": "Smart Aid Kit הוא אפליקציה מודרנית לניהול תרופות ובריאות לכל המשפחה. עקוב אחרי תאריכי תפוגה, צור תזכורות ושמור היסטוריית בריאות.",
+    "description": "Smart Aid Kit הוא אפליקציה מודרנית לניהול תרופות ובריאות לכל המשפחה. עקוב אחרי תאריכי תפוגה, צור תזכורות לנטילת תרופות, שמור היסטוריית בריאות ונהל את ארון התרופות לכל בני המשפחה. האפליקציה עוזרת לא לשכוח לקחת תרופות, מזהירה על תרופות שפג תוקפן ועוקבת אחרי מדדי בריאות חשובים.",
     "mainFeatures": "תכונות עיקריות",
-    "feature1": "ניהול תרופות עם תזכורות",
-    "feature2": "סריקת אריזות לזיהוי אוטומטי",
-    "feature3": "מעקב בריאות לניטור מדדים",
-    "feature4": "ניהול פרופילי בני משפחה",
-    "feature5": "התראות על תאריכי תפוגה",
+    "feature1": "ניהול תרופות עם תזכורות לנטילה",
+    "feature2": "סריקת אריזות לזיהוי אוטומטי של תרופות",
+    "feature3": "מעקב בריאות לניטור מדדים (לחץ דם, דופק, טמפרטורה וכו')",
+    "feature4": "ניהול פרופילי בני משפחה עם הגדרות אישיות",
+    "feature5": "התראות חכמות על תאריכי תפוגה וצורך במילוי",
     "contacts": "יצירת קשר",
-    "contactText": "אם יש לך שאלות או הצעות, צור קשר:",
-    "email": "support@medkit.com"
+    "contactText": "אם יש לך שאלות, הצעות או מצאת באג, צור קשר:",
+    "email": "support@smartaidkit.com"
   },
   "chat": {
     "title": "צ'אט עם בינה מלאכותית",
@@ -412,5 +473,66 @@
     "dose": "מינון",
     "timesPerDay": "פעמים ביום",
     "times": "זמנים"
+  },
+  "diary": {
+    "title": "יומן",
+    "empty": "אין רשומות ביומן. התחל לעקוב אחרי הבריאות שלך!",
+    "hint": "הוסף רשומות דרך הסעיפים:\n• תסמינים\n• מצב רוח\n• פעילות\n• שינה\n• ביקורי רופא\n• תוצאות בדיקות\n• מדדי בריאות",
+    "goToHealth": "עבור למעקבי בריאות"
+  },
+  "doctors": {
+    "title": "רופאים",
+    "add": "הוסף רופא",
+    "edit": "ערוך רופא",
+    "name": "שם רופא",
+    "namePlaceholder": "הכנס שם רופא",
+    "specialty": "התמחות",
+    "specialtyPlaceholder": "למשל: רופא משפחה, קרדיולוג",
+    "phone": "טלפון",
+    "phonePlaceholder": "+972-50-123-4567",
+    "email": "אימייל",
+    "emailPlaceholder": "doctor@example.com",
+    "address": "כתובת",
+    "addressPlaceholder": "כתובת מרפאה או משרד",
+    "notes": "הערות",
+    "notesPlaceholder": "מידע נוסף",
+    "nameRequired": "הכנס שם רופא",
+    "empty": "אין רופאים נוספים. הוסף את הרופא הראשון שלך!",
+    "deleteConfirm": "למחוק רופא?",
+    "deleteMessage": "האם אתה בטוח שברצונך למחוק את הרופא הזה?",
+    "deleteError": "נכשל במחיקת רופא",
+    "saveError": "נכשל בשמירת רופא",
+    "loadError": "נכשל בטעינת רופאים"
+  },
+  "help": {
+    "title": "עזרה ותמיכה",
+    "faq": "שאלות נפוצות",
+    "contact": "צור קשר",
+    "contactText": "אם יש לך שאלות או הצעות, כתוב לנו:",
+    "faq1": {
+      "question": "איך להוסיף תרופה?",
+      "answer": "עבור לטאב 'ראשי' ולחץ על 'הוסף תרופה'. אתה יכול להוסיף תרופה ידנית או לסרוק את האריזה."
+    },
+    "faq2": {
+      "question": "איך ליצור תזכורת?",
+      "answer": "פתח את התרופה ולחץ על 'הוסף תזכורת'. הגדר זמן וימי שבוע לנטילה."
+    },
+    "faq3": {
+      "question": "איך לסנכרן נתונים?",
+      "answer": "נתונים מסתנכרנים אוטומטית כאשר יש חיבור לאינטרנט. אתה יכול גם לבצע סנכרון ידני בהגדרות."
+    },
+    "faq4": {
+      "question": "איך להוסיף בן משפחה?",
+      "answer": "עבור לטאב 'משפחה' ולחץ על 'הוסף'. מלא את פרטי בן המשפחה."
+    },
+    "faq5": {
+      "question": "איך עובד סורק המרשמים?",
+      "answer": "לחץ על 'סורק מרשמים' במסך הראשי, צלם את המרשם. האפליקציה תזהה אוטומטית תרופות ותוסיף אותן לארון התרופות."
+    }
+  },
+  "share": {
+    "title": "שתף אפליקציה",
+    "message": "נסה את Smart Aid Kit - ארון תרופות חכם לכל המשפחה! נהל תרופות, עקוב אחרי בריאות ולעולם אל תשכח לקחת תרופות.",
+    "description": "שתף את האפליקציה עם חברים ומשפחה"
   }
 }

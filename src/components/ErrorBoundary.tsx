@@ -41,7 +41,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
     // Логируем ошибку
     logError(error, {
-      componentStack: errorInfo.componentStack,
+      componentStack: errorInfo.componentStack || undefined,
       context: {
         errorBoundary: true,
         errorName: error.name,
@@ -50,9 +50,7 @@ export class ErrorBoundary extends Component<Props, State> {
       email: user?.email,
     });
 
-    this.setState({
-      errorInfo,
-    });
+    this.setState({ errorInfo });
   }
 
   handleReset = () => {
@@ -197,6 +195,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+
+
+
+
+
+
 
 
 

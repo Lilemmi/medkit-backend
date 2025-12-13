@@ -37,7 +37,7 @@ export async function checkAllergiesInText(
       userAllergies && userName
         ? { id: userId, name: userName, allergies: userAllergies }
         : null,
-    ].filter(Boolean) as Array<{ id: number; name: string; allergies: string }>;
+    ].filter(Boolean) as { id: number; name: string; allergies: string }[];
     
     // 3. Разбиваем введенный текст на слова
     const inputWords = inputText
@@ -96,6 +96,12 @@ export async function checkAllergiesInText(
     return [];
   }
 }
+
+
+
+
+
+
 
 
 

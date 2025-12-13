@@ -3,6 +3,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import {
   Alert,
+  BackHandler,
   FlatList,
   StyleSheet,
   Switch,
@@ -10,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   createReminder,
   deleteReminder,
@@ -18,13 +20,31 @@ import {
 } from "../../../../src/database/reminders.service";
 import { getAllMedicines } from "../../../../src/database/medicine.service";
 import { useAuthStore } from "../../../../src/store/authStore";
+import { useColors } from "../../../../src/theme/colors";
+import { useLanguage } from "../../../../src/context/LanguageContext";
 
 export default function RemindersScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const insets = useSafeAreaInsets();
+  const colors = useColors();
+  const { t } = useLanguage();
   const [reminders, setReminders] = useState<any[]>([]);
   const [medicines, setMedicines] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Обработка системной кнопки "Назад" (Android)
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        router.back();
+        return true;
+      };
+
+      const backHandler = BackHandler.addEventListener("hardwareBackPress", onBackPress);
+      return () => backHandler.remove();
+    }, [router])
+  );
 
   async function loadData() {
     if (!user?.id) return;
@@ -129,13 +149,22 @@ export default function RemindersScreen() {
           )}
         </View>
 
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={() => handleDelete(item.id)}
-        >
-          <MaterialCommunityIcons name="delete-outline" size={20} color="#FF6B6B" />
-          <Text style={styles.deleteButtonText}>Удалить</Text>
-        </TouchableOpacity>
+        <View style={styles.actionsContainer}>
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={() => router.push(`/(tabs)/home/add/reminder?reminderId=${item.id}`)}
+          >
+            <MaterialCommunityIcons name="pencil-outline" size={20} color="#4A90E2" />
+            <Text style={styles.editButtonText}>Редактировать</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={() => handleDelete(item.id)}
+          >
+            <MaterialCommunityIcons name="delete-outline" size={20} color="#FF6B6B" />
+            <Text style={styles.deleteButtonText}>Удалить</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   };
@@ -150,6 +179,15 @@ export default function RemindersScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { flex: 1, textAlign: "center" }]}>{t("reminders.title") || "Напоминания"}</Text>
+        <View style={{ width: 24 }} />
+      </View>
+
       {reminders.length === 0 ? (
         <View style={styles.emptyContainer}>
           <MaterialCommunityIcons name="bell-off" size={64} color="#ccc" />
@@ -168,13 +206,13 @@ export default function RemindersScreen() {
                   { text: "Отмена", style: "cancel" },
                   {
                     text: "Создать",
-                    onPress: async (title) => {
-                      if (!title) return;
+                    onPress: async (title?: string) => {
+                      if (!title || !title.trim()) return;
                       
                       // Простое напоминание на каждый день в 9:00
                       try {
                         await createReminder({
-                          title,
+                          title: title.trim(),
                           hour: 9,
                           minute: 0,
                           userId: user.id,
@@ -224,6 +262,21 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F5F8FF",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E0E6ED",
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#1A1A1A",
   },
   emptyContainer: {
     flex: 1,
@@ -319,13 +372,42 @@ const styles = StyleSheet.create({
     color: "#333",
     marginTop: 4,
   },
-  deleteButton: {
+  actionsContainer: {
     flexDirection: "row",
-    alignItems: "center",
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: "#eee",
+    gap: 12,
+    minHeight: 50,
+  },
+  editButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#4A90E220",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    minHeight: 44,
+  },
+  editButtonText: {
+    color: "#4A90E2",
+    fontSize: 14,
+    fontWeight: "600",
+    marginLeft: 6,
+  },
+  deleteButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FF6B6B20",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    minHeight: 44,
   },
   deleteButtonText: {
     color: "#FF6B6B",
@@ -334,6 +416,12 @@ const styles = StyleSheet.create({
     marginLeft: 6,
   },
 });
+
+
+
+
+
+
 
 
 

@@ -92,11 +92,30 @@ export async function getHealthDB(): Promise<SQLite.SQLiteDatabase> {
       date TEXT NOT NULL,
       createdAt TEXT DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS doctors (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      userId INTEGER,
+      name TEXT NOT NULL,
+      specialty TEXT,
+      phone TEXT,
+      email TEXT,
+      address TEXT,
+      notes TEXT,
+      createdAt TEXT DEFAULT (datetime('now')),
+      updatedAt TEXT DEFAULT (datetime('now'))
+    );
   `);
 
   console.log("📦 Health DB: таблицы готовы");
   return db;
 }
+
+
+
+
+
+
 
 
 

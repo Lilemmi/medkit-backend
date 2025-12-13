@@ -60,6 +60,7 @@ export function logError(
     context?: Record<string, any>;
     userId?: number;
     email?: string;
+    quiet?: boolean; // Флаг для тихого логирования (без полного стека)
   }
 ): ErrorInfo {
   const errorMessage = typeof error === 'string' ? error : error.message;
@@ -91,15 +92,21 @@ export function logError(
     errorLog.shift(); // Удаляем старые ошибки
   }
 
-  // Логируем в консоль с полной информацией
-  console.error('🚨 ERROR LOGGED:', {
-    message: errorData.message,
-    stack: errorData.stack,
-    timestamp: errorData.timestamp,
-    device: errorData.deviceInfo,
-    user: errorData.userInfo,
-    context: errorData.context,
-  });
+  // Логируем в консоль
+  if (errorInfo?.quiet) {
+    // Тихий режим - только краткое сообщение
+    console.log(`⚠️ ${errorData.message}`);
+  } else {
+    // Полное логирование с стеком
+    console.error('🚨 ERROR LOGGED:', {
+      message: errorData.message,
+      stack: errorData.stack,
+      timestamp: errorData.timestamp,
+      device: errorData.deviceInfo,
+      user: errorData.userInfo,
+      context: errorData.context,
+    });
+  }
 
   // TODO: Здесь можно добавить отправку в Sentry, Crashlytics и т.д.
   // Пример:

@@ -1,6 +1,6 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 import * as SecureStore from "expo-secure-store";
-import { I18n } from "i18next";
+import type { i18n as I18n, TFunction } from "i18next";
 import i18n from "../i18n/i18n";
 
 type Language = "ru" | "en" | "he";
@@ -8,15 +8,15 @@ type Language = "ru" | "en" | "he";
 type LanguageContextType = {
   language: Language;
   setLanguage: (lang: Language) => Promise<void>;
-  t: (key: string, options?: any) => string;
+  t: TFunction;
   i18n: I18n;
 };
 
 const LanguageContext = createContext<LanguageContextType>({
   language: "ru",
   setLanguage: async () => {},
-  t: (key: string) => key,
-  i18n: i18n,
+  t: ((key: string) => key) as unknown as TFunction,
+  i18n: (i18n as unknown) as I18n,
 });
 
 const LANGUAGE_STORAGE_KEY = "app_language";
@@ -68,9 +68,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     await changeLanguage(lang);
   };
 
-  const t = (key: string, options?: any) => {
-    return i18n.t(key, options);
-  };
+  const t: TFunction = (i18n.t as unknown) as TFunction;
 
   if (!isReady) {
     return null; // Можно показать загрузку
@@ -86,6 +84,12 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 export function useLanguage() {
   return useContext(LanguageContext);
 }
+
+
+
+
+
+
 
 
 

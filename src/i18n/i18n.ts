@@ -7,7 +7,7 @@ import he from "./locales/he.json";
 i18n
   .use(initReactI18next)
   .init({
-    compatibilityJSON: "v3",
+    compatibilityJSON: "v4",
     resources: {
       ru: { translation: ru },
       en: { translation: en },
@@ -21,6 +21,12 @@ i18n
   });
 
 export default i18n;
+
+
+
+
+
+
 
 
 

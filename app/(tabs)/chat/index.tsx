@@ -1,18 +1,42 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useState } from "react";
+import { BackHandler, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { askGemini } from "../../../src/api/gemini";
 import { useColors } from "../../../src/theme/colors";
 import { useLanguage } from "../../../src/context/LanguageContext";
 
 export default function ChatHome() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const colors = useColors();
   const { t } = useLanguage();
-  const [messages, setMessages] = useState<Array<{ role: "user" | "ai"; text: string }>>([]);
+  const [messages, setMessages] = useState<{ role: "user" | "ai"; text: string }[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Обработка системной кнопки "Назад" на вкладке "AI"
+  // При нажатии переходим на вкладку "Главная"
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        // Проверяем, можно ли вернуться назад в навигации
+        if (router.canGoBack()) {
+          router.back();
+          return true;
+        }
+        
+        // Если нельзя вернуться назад - переходим на вкладку "Главная"
+        // Корневой экран вкладки - стандартное поведение Android (не обрабатываем)
+        return false;
+        return true;
+      };
+
+      const backHandler = BackHandler.addEventListener("hardwareBackPress", onBackPress);
+      return () => backHandler.remove();
+    }, [router])
+  );
 
   const handleSend = async () => {
     if (!input.trim() || loading) return;

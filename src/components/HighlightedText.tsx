@@ -16,12 +16,12 @@ export default function HighlightedText({ text, matches }: HighlightedTextProps)
 
   // Находим все совпадения в тексте
   const getHighlightedParts = () => {
-    const parts: Array<{ text: string; isHighlight: boolean; match?: AllergyMatch }> = [];
+    const parts: { text: string; isHighlight: boolean; match?: AllergyMatch }[] = [];
     const textLower = text.toLowerCase();
     let lastIndex = 0;
 
     // Сортируем совпадения по позиции
-    const sortedMatches: Array<{ start: number; end: number; match: AllergyMatch }> = [];
+    const sortedMatches: { start: number; end: number; match: AllergyMatch }[] = [];
 
     matches.forEach((match) => {
       const substance = match.substance.toLowerCase();

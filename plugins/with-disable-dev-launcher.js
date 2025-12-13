@@ -1,10 +1,29 @@
-const { withAndroidManifest } = require('@expo/config-plugins');
+const { withGradleProperties, withAndroidManifest } = require('@expo/config-plugins');
+const path = require('path');
 
 /**
  * Config plugin to disable Expo Dev Launcher in release builds
+ * This plugin:
+ * 1. Disables dev launcher via AndroidManifest meta-data
+ * 2. Adds Gradle property to exclude dev launcher from package list generation
  */
 const withDisableDevLauncher = (config) => {
-  return withAndroidManifest(config, (config) => {
+  // First, add Gradle property to exclude dev launcher
+  config = withGradleProperties(config, (config) => {
+    const properties = config.modResults;
+    
+    // Add property to exclude dev launcher from auto-generated package list
+    properties.push({
+      type: 'property',
+      key: 'expo.modules.devlauncher.enabled',
+      value: 'false'
+    });
+    
+    return config;
+  });
+
+  // Then, disable via AndroidManifest
+  config = withAndroidManifest(config, (config) => {
     const manifest = config.modResults.manifest;
     
     if (!manifest.application) {
@@ -40,7 +59,8 @@ const withDisableDevLauncher = (config) => {
 
     return config;
   });
+
+  return config;
 };
 
 module.exports = withDisableDevLauncher;
-

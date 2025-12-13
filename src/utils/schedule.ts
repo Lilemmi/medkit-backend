@@ -9,17 +9,28 @@ interface Medicine {
 }
 
 export async function scheduleMedicineReminder(medicine: Medicine) {
+  // Вычисляем дату и время первого срабатывания
+  const now = new Date();
+  const targetDate = new Date();
+  targetDate.setHours(medicine.timeHour, medicine.timeMinute, 0, 0);
+  
+  // Если время уже прошло сегодня, планируем на завтра
+  if (targetDate <= now) {
+    targetDate.setDate(targetDate.getDate() + 1);
+  }
+  
   await Notifications.scheduleNotificationAsync({
     content: {
       title: "Пора принять лекарство 💊",
       body: `${medicine.name} — ${medicine.dosage}`,
-      sound: "default",
+      sound: "default", // Звук по умолчанию
+      priority: Notifications.AndroidNotificationPriority.MAX, // Максимальный приоритет
+      categoryIdentifier: "medication-reminder", // Категория для группировки
     },
     trigger: {
-      type: SchedulableTriggerInputTypes.CALENDAR,
-      hour: medicine.timeHour,
-      minute: medicine.timeMinute,
-      repeats: true,
-    },
+      type: SchedulableTriggerInputTypes.DATE,
+      date: targetDate,
+      repeats: true, // Повторяем каждый день
+    } as any,
   });
 }

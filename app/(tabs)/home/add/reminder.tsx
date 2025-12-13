@@ -1,8 +1,9 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useState, useEffect } from "react";
+import { useFocusEffect, useRouter, useLocalSearchParams } from "expo-router";
+import { useCallback, useState, useEffect } from "react";
 import {
   Alert,
+  BackHandler,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,18 +11,43 @@ import {
   TouchableOpacity,
   View,
   Platform,
+  Modal,
+  FlatList,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { createReminder } from "../../../../src/database/reminders.service";
+import { createReminder, updateReminder, getReminderById } from "../../../../src/database/reminders.service";
 import { getAllMedicines } from "../../../../src/database/medicine.service";
 import { useAuthStore } from "../../../../src/store/authStore";
 import { useColors } from "../../../../src/theme/colors";
+import { getAllFamilyMembers } from "../../../../src/services/family.service";
+import { useLanguage } from "../../../../src/context/LanguageContext";
 
 export default function AddReminderScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ medicineId?: string; medicineName?: string; reminderId?: string }>();
   const { user } = useAuthStore();
   const insets = useSafeAreaInsets();
   const colors = useColors();
+  const { t } = useLanguage();
+  
+  const isEditMode = !!params.reminderId;
+
+  // Обработка системной кнопки "Назад" (Android)
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        // Возвращаемся на предыдущий экран
+        router.back();
+        return true; // Предотвращаем стандартное поведение
+      };
+
+      // Добавляем обработчик
+      const backHandler = BackHandler.addEventListener("hardwareBackPress", onBackPress);
+
+      // Удаляем обработчик при размонтировании
+      return () => backHandler.remove();
+    }, [router])
+  );
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [selectedMedicine, setSelectedMedicine] = useState<number | null>(null);
@@ -30,12 +56,67 @@ export default function AddReminderScreen() {
   const [minute, setMinute] = useState(0);
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showRecipientModal, setShowRecipientModal] = useState(false);
+  const [recipientType, setRecipientType] = useState<"user" | "family">("user");
+  const [selectedRecipientId, setSelectedRecipientId] = useState<number | null>(null);
+  const [familyMembers, setFamilyMembers] = useState<any[]>([]);
 
   useEffect(() => {
     if (user?.id) {
       loadMedicines();
+      loadFamilyMembers();
     }
   }, [user?.id]);
+
+  // Загружаем данные напоминания для редактирования
+  useEffect(() => {
+    async function loadReminderData() {
+      if (params.reminderId && !isNaN(parseInt(params.reminderId))) {
+        try {
+          const reminderId = parseInt(params.reminderId);
+          const reminder = await getReminderById(reminderId);
+          
+          if (reminder) {
+            setTitle(reminder.title || "");
+            setBody(reminder.body || "");
+            setHour(reminder.hour || 9);
+            setMinute(reminder.minute || 0);
+            setSelectedDays(reminder.daysOfWeek || []);
+            setSelectedMedicine(reminder.medicineId || null);
+            setRecipientType(reminder.recipientType || "user");
+            setSelectedRecipientId(reminder.recipientId || null);
+          }
+        } catch (error) {
+          console.error("Error loading reminder:", error);
+        }
+      }
+    }
+    
+    loadReminderData();
+  }, [params.reminderId]);
+
+  // Предзаполняем лекарство, если оно передано через параметры
+  useEffect(() => {
+    if (params.medicineId && medicines.length > 0 && !isEditMode) {
+      const medicineId = parseInt(params.medicineId);
+      if (!isNaN(medicineId)) {
+        setSelectedMedicine(medicineId);
+        // Предзаполняем название напоминания
+        if (params.medicineName && !title) {
+          setTitle(`${params.medicineName} - пора принять`);
+        }
+      }
+    }
+  }, [params.medicineId, params.medicineName, medicines, isEditMode]);
+  
+  async function loadFamilyMembers() {
+    try {
+      const data = await getAllFamilyMembers();
+      setFamilyMembers(data || []);
+    } catch (error) {
+      console.error("Error loading family members:", error);
+    }
+  }
 
   async function loadMedicines() {
     if (!user?.id) return;
@@ -89,30 +170,67 @@ export default function AddReminderScreen() {
       return;
     }
 
+    // Показываем модальное окно выбора получателя
+    setShowRecipientModal(true);
+  };
+  
+  const handleConfirmRecipient = async () => {
+    if (recipientType === "family" && !selectedRecipientId) {
+      Alert.alert(t("common.error"), "Выберите члена семьи");
+      return;
+    }
+
+    setShowRecipientModal(false);
     setLoading(true);
 
     try {
       const selectedMedicineData = medicines.find((m) => m.id === selectedMedicine);
 
-      await createReminder({
-        medicineId: selectedMedicine || undefined,
-        medicineName: selectedMedicineData?.name || undefined,
-        title: title.trim(),
-        body: body.trim() || undefined,
-        hour,
-        minute,
-        daysOfWeek: selectedDays.length > 0 ? selectedDays : undefined,
-        userId: user.id,
-      });
+      if (isEditMode && params.reminderId) {
+        // Режим редактирования
+        await updateReminder({
+          id: parseInt(params.reminderId),
+          medicineId: selectedMedicine || undefined,
+          medicineName: selectedMedicineData?.name || undefined,
+          title: title.trim(),
+          body: body.trim() || undefined,
+          hour,
+          minute,
+          daysOfWeek: selectedDays.length > 0 ? selectedDays : undefined,
+          recipientType,
+          recipientId: recipientType === "user" ? user.id : selectedRecipientId || undefined,
+        });
 
-      Alert.alert(t("common.success"), t("reminders.created"), [
-        {
-          text: t("common.ok"),
-          onPress: () => router.back(),
-        },
-      ]);
+        Alert.alert(t("common.success"), t("reminders.updated") || "Напоминание обновлено", [
+          {
+            text: t("common.ok"),
+            onPress: () => router.back(),
+          },
+        ]);
+      } else {
+        // Режим создания
+        await createReminder({
+          medicineId: selectedMedicine || undefined,
+          medicineName: selectedMedicineData?.name || undefined,
+          title: title.trim(),
+          body: body.trim() || undefined,
+          hour,
+          minute,
+          daysOfWeek: selectedDays.length > 0 ? selectedDays : undefined,
+          userId: user.id,
+          recipientType,
+          recipientId: recipientType === "user" ? user.id : selectedRecipientId || undefined,
+        });
+
+        Alert.alert(t("common.success"), t("reminders.created"), [
+          {
+            text: t("common.ok"),
+            onPress: () => router.back(),
+          },
+        ]);
+      }
     } catch (error) {
-      console.error("Error creating reminder:", error);
+      console.error(`Error ${isEditMode ? "updating" : "creating"} reminder:`, error);
       Alert.alert(t("common.error"), t("reminders.error"));
     } finally {
       setLoading(false);
@@ -294,6 +412,128 @@ export default function AddReminderScreen() {
       fontSize: 18,
       fontWeight: "600",
     },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      justifyContent: "flex-end",
+    },
+    modalContent: {
+      backgroundColor: colors.surface,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      padding: 20,
+      maxHeight: "80%",
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: "700",
+      color: colors.text,
+      marginBottom: 20,
+      textAlign: "center",
+    },
+    recipientTypeContainer: {
+      flexDirection: "row",
+      gap: 12,
+      marginBottom: 20,
+    },
+    recipientTypeButton: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 16,
+      paddingHorizontal: 20,
+      borderRadius: 12,
+      backgroundColor: colors.lightGray,
+      borderWidth: 2,
+      borderColor: "transparent",
+      gap: 8,
+    },
+    recipientTypeButtonActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    recipientTypeText: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.text,
+    },
+    recipientTypeTextActive: {
+      color: colors.white,
+    },
+    familyListContainer: {
+      marginBottom: 20,
+      maxHeight: 300,
+    },
+    familyListTitle: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.text,
+      marginBottom: 12,
+    },
+    familyList: {
+      maxHeight: 250,
+    },
+    familyMemberItem: {
+      padding: 16,
+      borderRadius: 12,
+      backgroundColor: colors.lightGray,
+      marginBottom: 8,
+      borderWidth: 2,
+      borderColor: "transparent",
+    },
+    familyMemberItemSelected: {
+      backgroundColor: colors.primary + "20",
+      borderColor: colors.primary,
+    },
+    familyMemberName: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.text,
+    },
+    familyMemberNameSelected: {
+      color: colors.primary,
+    },
+    familyMemberRole: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginTop: 4,
+    },
+    emptyFamilyText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: "center",
+      padding: 20,
+    },
+    modalButtons: {
+      flexDirection: "row",
+      gap: 12,
+    },
+    modalButton: {
+      flex: 1,
+      paddingVertical: 16,
+      borderRadius: 12,
+      alignItems: "center",
+    },
+    modalButtonCancel: {
+      backgroundColor: colors.lightGray,
+    },
+    modalButtonConfirm: {
+      backgroundColor: colors.primary,
+    },
+    modalButtonDisabled: {
+      opacity: 0.5,
+    },
+    modalButtonCancelText: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.text,
+    },
+    modalButtonConfirmText: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.white,
+    },
   });
 
   return (
@@ -303,7 +543,9 @@ export default function AddReminderScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t("reminders.create")}</Text>
+        <Text style={styles.headerTitle}>
+          {isEditMode ? (t("reminders.edit") || "Редактировать напоминание") : t("reminders.create")}
+        </Text>
         <View style={{ width: 24 }} />
       </View>
 
@@ -431,10 +673,136 @@ export default function AddReminderScreen() {
           disabled={loading}
         >
           <Text style={styles.saveButtonText}>
-            {loading ? t("reminders.creating") : t("reminders.createButton")}
+            {loading
+              ? (isEditMode ? (t("reminders.updating") || "Сохранение...") : t("reminders.creating"))
+              : (isEditMode ? (t("reminders.updateButton") || "Сохранить") : t("reminders.createButton"))}
           </Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Модальное окно выбора получателя */}
+      <Modal
+        visible={showRecipientModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowRecipientModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Выберите получателя</Text>
+
+            {/* Выбор типа получателя */}
+            <View style={styles.recipientTypeContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.recipientTypeButton,
+                  recipientType === "user" && styles.recipientTypeButtonActive,
+                ]}
+                onPress={() => {
+                  setRecipientType("user");
+                  setSelectedRecipientId(null);
+                }}
+              >
+                <MaterialCommunityIcons
+                  name="account"
+                  size={20}
+                  color={recipientType === "user" ? colors.white : colors.text}
+                />
+                <Text
+                  style={[
+                    styles.recipientTypeText,
+                    recipientType === "user" && styles.recipientTypeTextActive,
+                  ]}
+                >
+                  Для меня
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.recipientTypeButton,
+                  recipientType === "family" && styles.recipientTypeButtonActive,
+                ]}
+                onPress={() => setRecipientType("family")}
+              >
+                <MaterialCommunityIcons
+                  name="account-group"
+                  size={20}
+                  color={recipientType === "family" ? colors.white : colors.text}
+                />
+                <Text
+                  style={[
+                    styles.recipientTypeText,
+                    recipientType === "family" && styles.recipientTypeTextActive,
+                  ]}
+                >
+                  Для семьи
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Список членов семьи (если выбран тип "семья") */}
+            {recipientType === "family" && (
+              <View style={styles.familyListContainer}>
+                <Text style={styles.familyListTitle}>Выберите члена семьи:</Text>
+                {familyMembers.length === 0 ? (
+                  <Text style={styles.emptyFamilyText}>Нет добавленных членов семьи</Text>
+                ) : (
+                  <FlatList
+                    data={familyMembers}
+                    keyExtractor={(item) => item.id.toString()}
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        style={[
+                          styles.familyMemberItem,
+                          selectedRecipientId === item.id && styles.familyMemberItemSelected,
+                        ]}
+                        onPress={() =>
+                          setSelectedRecipientId(selectedRecipientId === item.id ? null : item.id)
+                        }
+                      >
+                        <Text
+                          style={[
+                            styles.familyMemberName,
+                            selectedRecipientId === item.id && styles.familyMemberNameSelected,
+                          ]}
+                        >
+                          {item.name}
+                        </Text>
+                        {item.role && (
+                          <Text style={styles.familyMemberRole}>{item.role}</Text>
+                        )}
+                      </TouchableOpacity>
+                    )}
+                    style={styles.familyList}
+                  />
+                )}
+              </View>
+            )}
+
+            {/* Кнопки модального окна */}
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonCancel]}
+                onPress={() => setShowRecipientModal(false)}
+              >
+                <Text style={styles.modalButtonCancelText}>Отмена</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.modalButton,
+                  styles.modalButtonConfirm,
+                  loading && styles.modalButtonDisabled,
+                ]}
+                onPress={handleConfirmRecipient}
+                disabled={loading}
+              >
+                <Text style={styles.modalButtonConfirmText}>Создать</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

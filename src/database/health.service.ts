@@ -5,7 +5,13 @@ export type HealthMetricType =
   | "pulse" 
   | "temperature" 
   | "weight" 
-  | "height" 
+  | "height"
+  | "activity"
+  | "doctor_visit"
+  | "lab_result"
+  | "mood"
+  | "sleep"
+  | "symptom" 
   | "blood_sugar"
   | "oxygen";
 
@@ -91,7 +97,7 @@ export async function saveHealthMetric(metric: HealthMetric) {
   await db.runAsync(
     `INSERT INTO health_metrics (userId, type, value, value2, unit, notes, date)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [metric.userId, metric.type, metric.value, metric.value2 || null, metric.unit || null, metric.notes || null, metric.date]
+    [metric.userId ?? null, metric.type, metric.value, metric.value2 || null, metric.unit || null, metric.notes || null, metric.date]
   );
 }
 
@@ -102,7 +108,7 @@ export async function getHealthMetrics(type: HealthMetricType, userId?: number, 
     ? `SELECT * FROM health_metrics WHERE type = ? AND userId = ? ORDER BY date DESC LIMIT ?`
     : `SELECT * FROM health_metrics WHERE type = ? ORDER BY date DESC LIMIT ?`;
   const params = userId ? [type, userId, limit] : [type, limit];
-  return await db.getAllAsync(query, params);
+  return await db.getAllAsync<HealthMetric>(query, params);
 }
 
 // Сохранить симптом
@@ -111,7 +117,7 @@ export async function saveSymptom(symptom: Symptom) {
   await db.runAsync(
     `INSERT INTO symptoms (userId, name, severity, notes, date)
      VALUES (?, ?, ?, ?, ?)`,
-    [symptom.userId, symptom.name, symptom.severity, symptom.notes || null, symptom.date]
+    [symptom.userId ?? null, symptom.name, symptom.severity, symptom.notes || null, symptom.date]
   );
 }
 
@@ -122,7 +128,7 @@ export async function getSymptoms(userId?: number, limit: number = 30) {
     ? `SELECT * FROM symptoms WHERE userId = ? ORDER BY date DESC LIMIT ?`
     : `SELECT * FROM symptoms ORDER BY date DESC LIMIT ?`;
   const params = userId ? [userId, limit] : [limit];
-  return await db.getAllAsync(query, params);
+  return await db.getAllAsync<Symptom>(query, params);
 }
 
 // Сохранить настроение
@@ -131,7 +137,7 @@ export async function saveMood(mood: Mood) {
   await db.runAsync(
     `INSERT INTO mood (userId, mood, notes, date)
      VALUES (?, ?, ?, ?)`,
-    [mood.userId, mood.mood, mood.notes || null, mood.date]
+    [mood.userId ?? null, mood.mood, mood.notes || null, mood.date]
   );
 }
 
@@ -142,7 +148,7 @@ export async function getMoods(userId?: number, limit: number = 30) {
     ? `SELECT * FROM mood WHERE userId = ? ORDER BY date DESC LIMIT ?`
     : `SELECT * FROM mood ORDER BY date DESC LIMIT ?`;
   const params = userId ? [userId, limit] : [limit];
-  return await db.getAllAsync(query, params);
+  return await db.getAllAsync<Mood>(query, params);
 }
 
 // Сохранить активность
@@ -151,7 +157,7 @@ export async function saveActivity(activity: Activity) {
   await db.runAsync(
     `INSERT INTO activities (userId, type, duration, calories, notes, date)
      VALUES (?, ?, ?, ?, ?, ?)`,
-    [activity.userId, activity.type, activity.duration, activity.calories || null, activity.notes || null, activity.date]
+    [activity.userId ?? null, activity.type, activity.duration, activity.calories || null, activity.notes || null, activity.date]
   );
 }
 
@@ -162,7 +168,7 @@ export async function getActivities(userId?: number, limit: number = 30) {
     ? `SELECT * FROM activities WHERE userId = ? ORDER BY date DESC LIMIT ?`
     : `SELECT * FROM activities ORDER BY date DESC LIMIT ?`;
   const params = userId ? [userId, limit] : [limit];
-  return await db.getAllAsync(query, params);
+  return await db.getAllAsync<Activity>(query, params);
 }
 
 // Сохранить сон
@@ -171,7 +177,7 @@ export async function saveSleep(sleep: Sleep) {
   await db.runAsync(
     `INSERT INTO sleep (userId, sleepHours, quality, notes, date)
      VALUES (?, ?, ?, ?, ?)`,
-    [sleep.userId, sleep.sleepHours, sleep.quality, sleep.notes || null, sleep.date]
+    [sleep.userId ?? null, sleep.sleepHours, sleep.quality, sleep.notes || null, sleep.date]
   );
 }
 
@@ -182,7 +188,7 @@ export async function getSleep(userId?: number, limit: number = 30) {
     ? `SELECT * FROM sleep WHERE userId = ? ORDER BY date DESC LIMIT ?`
     : `SELECT * FROM sleep ORDER BY date DESC LIMIT ?`;
   const params = userId ? [userId, limit] : [limit];
-  return await db.getAllAsync(query, params);
+  return await db.getAllAsync<Sleep>(query, params);
 }
 
 // Сохранить воду
@@ -191,7 +197,7 @@ export async function saveWater(water: Water) {
   await db.runAsync(
     `INSERT INTO water (userId, amount, date)
      VALUES (?, ?, ?)`,
-    [water.userId, water.amount, water.date]
+    [water.userId ?? null, water.amount, water.date]
   );
 }
 
@@ -202,7 +208,7 @@ export async function getWaterByDate(date: string, userId?: number) {
     ? `SELECT SUM(amount) as total FROM water WHERE date = ? AND userId = ?`
     : `SELECT SUM(amount) as total FROM water WHERE date = ?`;
   const params = userId ? [date, userId] : [date];
-  const result = await db.getFirstAsync(query, params);
+  const result = await db.getFirstAsync<{ total: number }>(query, params);
   return result?.total || 0;
 }
 
@@ -212,7 +218,7 @@ export async function saveDoctorVisit(visit: DoctorVisit) {
   await db.runAsync(
     `INSERT INTO doctor_visits (userId, doctorName, specialty, reason, diagnosis, prescription, date)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [visit.userId, visit.doctorName || null, visit.specialty || null, visit.reason || null, 
+    [visit.userId ?? null, visit.doctorName || null, visit.specialty || null, visit.reason || null,
      visit.diagnosis || null, visit.prescription || null, visit.date]
   );
 }
@@ -224,7 +230,7 @@ export async function getDoctorVisits(userId?: number, limit: number = 30) {
     ? `SELECT * FROM doctor_visits WHERE userId = ? ORDER BY date DESC LIMIT ?`
     : `SELECT * FROM doctor_visits ORDER BY date DESC LIMIT ?`;
   const params = userId ? [userId, limit] : [limit];
-  return await db.getAllAsync(query, params);
+  return await db.getAllAsync<DoctorVisit>(query, params);
 }
 
 // Сохранить результат анализа
@@ -233,7 +239,7 @@ export async function saveLabResult(lab: LabResult) {
   await db.runAsync(
     `INSERT INTO lab_results (userId, testName, result, unit, normalRange, notes, date)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [lab.userId, lab.testName, lab.result || null, lab.unit || null, 
+    [lab.userId ?? null, lab.testName, lab.result || null, lab.unit || null,
      lab.normalRange || null, lab.notes || null, lab.date]
   );
 }
@@ -245,7 +251,7 @@ export async function getLabResults(userId?: number, limit: number = 30) {
     ? `SELECT * FROM lab_results WHERE userId = ? ORDER BY date DESC LIMIT ?`
     : `SELECT * FROM lab_results ORDER BY date DESC LIMIT ?`;
   const params = userId ? [userId, limit] : [limit];
-  return await db.getAllAsync(query, params);
+  return await db.getAllAsync<LabResult>(query, params);
 }
 
 // Удалить запись
@@ -253,6 +259,12 @@ export async function deleteHealthRecord(table: string, id: number) {
   const db = await getHealthDB();
   await db.runAsync(`DELETE FROM ${table} WHERE id = ?`, [id]);
 }
+
+
+
+
+
+
 
 
 

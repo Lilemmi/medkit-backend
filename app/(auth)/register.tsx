@@ -7,6 +7,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  ScrollView,
 } from "react-native";
 import {
   validateEmail,
@@ -14,6 +15,7 @@ import {
   validateRequired,
 } from "../../src/utils/validation";
 import { useAuthStore } from "../../src/store/authStore";
+import BirthDatePicker from "../../src/components/BirthDatePicker";
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -23,6 +25,9 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [gender, setGender] = useState<string>("");
+  const [allergies, setAllergies] = useState("");
+  const [birthDate, setBirthDate] = useState("");
   const [error, setError] = useState("");
 
   // Редирект после успешной регистрации
@@ -38,7 +43,7 @@ export default function RegisterScreen() {
     // Логируем значения перед валидацией
     console.log("🔍 REGISTER FORM VALUES:", { name, email, password: password ? "***" : undefined });
 
-    // Валидация
+    // Валидация обязательных полей
     if (!validateRequired(name)) {
       setError("Введите имя");
       return;
@@ -59,6 +64,24 @@ export default function RegisterScreen() {
       setError("Пароли не совпадают");
       return;
     }
+    if (!gender) {
+      setError("Выберите пол");
+      return;
+    }
+    if (!validateRequired(allergies)) {
+      setError("Укажите аллергии (если нет аллергий, укажите 'Нет')");
+      return;
+    }
+    if (!birthDate || birthDate.trim() === "") {
+      setError("Укажите дату рождения");
+      return;
+    }
+    
+    // Проверяем формат даты (должен быть YYYY-MM-DD)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDate.trim())) {
+      setError("Дата рождения должна быть полной (день, месяц, год)");
+      return;
+    }
 
     // Проверяем, что все поля не undefined перед отправкой
     if (!name || name === undefined || name.trim() === "") {
@@ -75,8 +98,15 @@ export default function RegisterScreen() {
     }
 
     // Отправка на backend
-    console.log("🚀 CALLING register with:", { name, email, password: "***" });
-    const success = await register(name.trim(), email.trim(), password);
+    console.log("🚀 CALLING register with:", { name, email, password: "***", gender, allergies, birthDate });
+    const success = await register(
+      name.trim(),
+      email.trim(),
+      password,
+      gender,
+      allergies.trim(),
+      birthDate.trim()
+    );
 
     if (!success && authError) {
       setError(authError);
@@ -85,7 +115,7 @@ export default function RegisterScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       <Text style={styles.title}>Регистрация</Text>
 
       {(error || authError) && (
@@ -93,7 +123,7 @@ export default function RegisterScreen() {
       )}
 
       <TextInput
-        placeholder="Имя"
+        placeholder="Имя *"
         placeholderTextColor="#888"
         style={styles.input}
         value={name}
@@ -103,7 +133,7 @@ export default function RegisterScreen() {
       />
 
       <TextInput
-        placeholder="Email"
+        placeholder="Email *"
         placeholderTextColor="#888"
         style={styles.input}
         value={email}
@@ -113,8 +143,64 @@ export default function RegisterScreen() {
         editable={!loading}
       />
 
+      {/* Пол */}
+      <View style={styles.section}>
+        <Text style={styles.label}>Пол *</Text>
+        <View style={styles.genderContainer}>
+          <TouchableOpacity
+            style={[styles.genderButton, gender === "male" && styles.genderButtonActive]}
+            onPress={() => setGender("male")}
+            disabled={loading}
+          >
+            <Text style={[styles.genderButtonText, gender === "male" && styles.genderButtonTextActive]}>
+              Мужской
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.genderButton, gender === "female" && styles.genderButtonActive]}
+            onPress={() => setGender("female")}
+            disabled={loading}
+          >
+            <Text style={[styles.genderButtonText, gender === "female" && styles.genderButtonTextActive]}>
+              Женский
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.genderButton, gender === "other" && styles.genderButtonActive]}
+            onPress={() => setGender("other")}
+            disabled={loading}
+          >
+            <Text style={[styles.genderButtonText, gender === "other" && styles.genderButtonTextActive]}>
+              Другое
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Дата рождения */}
+      <View style={styles.section}>
+        <Text style={styles.label}>Дата рождения *</Text>
+        <BirthDatePicker
+          value={birthDate}
+          onChange={(value) => setBirthDate(value)}
+          placeholder="Выберите дату рождения"
+        />
+      </View>
+
       <TextInput
-        placeholder="Пароль"
+        placeholder="Аллергии * (если нет, укажите 'Нет')"
+        placeholderTextColor="#888"
+        style={[styles.input, styles.textArea]}
+        value={allergies}
+        onChangeText={setAllergies}
+        multiline
+        numberOfLines={3}
+        textAlignVertical="top"
+        editable={!loading}
+      />
+
+      <TextInput
+        placeholder="Пароль *"
         placeholderTextColor="#888"
         secureTextEntry
         style={styles.input}
@@ -125,7 +211,7 @@ export default function RegisterScreen() {
       />
 
       <TextInput
-        placeholder="Повтор пароля"
+        placeholder="Повтор пароля *"
         placeholderTextColor="#888"
         secureTextEntry
         style={styles.input}
@@ -154,16 +240,18 @@ export default function RegisterScreen() {
       >
         <Text style={styles.link}>Уже есть аккаунт? Войти</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 25,
-    justifyContent: "center",
     backgroundColor: "#F5F5F7",
+  },
+  contentContainer: {
+    padding: 25,
+    paddingBottom: 40,
   },
   title: {
     fontSize: 36,
@@ -219,5 +307,45 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: "#FFEBEE",
     borderRadius: 8,
+  },
+  section: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#111",
+    marginBottom: 8,
+  },
+  genderContainer: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  genderButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: "#fff",
+    borderWidth: 2,
+    borderColor: "#D1D1D6",
+    alignItems: "center",
+  },
+  genderButtonActive: {
+    backgroundColor: "#007AFF",
+    borderColor: "#007AFF",
+  },
+  genderButtonText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#111",
+  },
+  genderButtonTextActive: {
+    color: "#fff",
+    fontWeight: "600",
+  },
+  textArea: {
+    minHeight: 80,
+    paddingTop: 12,
   },
 });

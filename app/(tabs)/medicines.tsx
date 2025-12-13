@@ -1,11 +1,13 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Notifications from "expo-notifications";
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 import {
   Alert,
+  BackHandler,
   FlatList,
   Image,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -19,6 +21,8 @@ import {
 import { useAuthStore } from "../../src/store/authStore";
 import { useColors } from "../../src/theme/colors";
 import { useLanguage } from "../../src/context/LanguageContext";
+import { formatExpiryDate } from "../../src/utils/date-formatter";
+import type { MedicineRow } from "../../src/types/db";
 
 // 🔔 Просим доступ к уведомлениям
 async function requestNotificationPermission() {
@@ -34,7 +38,7 @@ export default function MedicinesScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
   const { t } = useLanguage();
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState<MedicineRow[]>([]);
 
   async function loadData() {
     if (!user?.id) {
@@ -58,6 +62,29 @@ export default function MedicinesScreen() {
     }, [user?.id])
   );
 
+  // Убрана логика router.replace() - навигация управляется Tab Navigator
+  // При переключении вкладок Tab Navigator сам управляет стеком
+
+  // Обработка системной кнопки "Назад" на вкладке "Аптечка"
+  // При нажатии переходим на вкладку "Главная"
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        // Проверяем, можно ли вернуться назад в навигации
+        if (router.canGoBack()) {
+          router.back();
+          return true;
+        }
+        
+        // Корневой экран вкладки - стандартное поведение Android (не обрабатываем)
+        return false;
+      };
+
+      const backHandler = BackHandler.addEventListener("hardwareBackPress", onBackPress);
+      return () => backHandler.remove();
+    }, [router])
+  );
+
   // 🔔 Настройка напоминания
   async function handleNotify(item: any) {
     if (!item.expiry) {
@@ -72,8 +99,14 @@ export default function MedicinesScreen() {
       content: {
         title: `⚠️ ${t("notifications.expiring")}`,
         body: `${item.name} (${item.dose || ""}) ${t("medicines.expiry")} ${item.expiry}`,
+        sound: "default", // Звук по умолчанию
+        priority: Notifications.AndroidNotificationPriority.MAX, // Максимальный приоритет
+        categoryIdentifier: "medication-expiry", // Категория для группировки
       },
-      trigger: target,
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: target,
+      },
     });
 
     Alert.alert(t("medicines.notificationSet"), t("medicines.notificationMessage"));
@@ -81,6 +114,11 @@ export default function MedicinesScreen() {
 
   // 🗑️ Удаление
   function handleDelete(id: number) {
+    if (!user?.id) {
+      Alert.alert(t("common.error"), t("scan.userNotFound"));
+      return;
+    }
+
     Alert.alert(t("medicines.deleteConfirm"), t("medicines.deleteQuestion"), [
       { text: t("common.cancel") },
       {
@@ -88,7 +126,7 @@ export default function MedicinesScreen() {
         style: "destructive",
         onPress: async () => {
           try {
-            await deleteMedicine(id);
+            await deleteMedicine(id, user.id);
             loadData();
           } catch (error) {
             console.error("Error deleting medicine:", error);
@@ -168,18 +206,61 @@ export default function MedicinesScreen() {
         style={itemStyles.card}
         onPress={() => router.push(`/(tabs)/home/medicine/${item.id}`)}
       >
-        {item.photoUri && (
-          <Image
-            source={{ uri: item.photoUri }}
-            style={itemStyles.photo}
-          />
-        )}
+                    {/* Показываем фото - локальное или из интернета */}
+                    {(() => {
+                      // Если есть photoUri (локальное или из интернета)
+                      if (item.photoUri && item.photoUri.trim() !== '') {
+                        const photoUri = String(item.photoUri).trim();
+                        
+                        // Пропускаем невалидные локальные пути (file://, content://) которые могут быть с другого устройства
+                        // Используем только URL из интернета (http://, https://) или локальные пути с medicine_photos/
+                        // Также пропускаем пути без medicine_photos/, так как они могут быть невалидными после синхронизации
+                        if ((photoUri.startsWith('file://') || photoUri.startsWith('content://')) && 
+                            !photoUri.includes('medicine_photos/')) {
+                          // Это может быть путь с другого устройства - пропускаем
+                          return null;
+                        }
+                        
+                        // Для Android: если URI начинается с /storage/, добавляем file://
+                        let finalUri = photoUri;
+                        if (Platform.OS === 'android' && photoUri.startsWith('/storage/')) {
+                          finalUri = `file://${photoUri}`;
+                        }
+                        
+                        return (
+                          <Image
+                            source={{ uri: finalUri }}
+                            style={itemStyles.photo}
+                            resizeMode="cover"
+                            onError={(error) => {
+                              console.log(`Ошибка загрузки фото для лекарства ${item.id}:`, error.nativeEvent?.error || error);
+                              console.log(`Попытка загрузить URI: ${finalUri}`);
+                            }}
+                            onLoad={() => {
+                              console.log(`Фото загружено для лекарства ${item.id}:`, finalUri);
+                            }}
+                          />
+                        );
+                      }
+                      // Если нет фото - показываем placeholder
+                      return (
+                        <View style={[itemStyles.photo, { justifyContent: 'center', alignItems: 'center', backgroundColor: colors.lightGray }]}>
+                          <MaterialCommunityIcons name="pill" size={40} color={colors.textSecondary} />
+                        </View>
+                      );
+                    })()}
 
         <View style={{ flex: 1 }}>
           <Text style={itemStyles.name}>{item.name || t("scan.notSpecified")}</Text>
-          <Text style={itemStyles.info}>💊 {t("medicines.dosage")} {item.dose || "—"}</Text>
+          {item.userDosage ? (
+            <Text style={[itemStyles.info, { color: colors?.primary || "#4A90E2", fontWeight: "600" }]}>
+              💉 {t("medicines.dosage")} {item.userDosage}
+            </Text>
+          ) : (
+            <Text style={itemStyles.info}>💊 {t("medicines.dosage")} {item.dose || "—"}</Text>
+          )}
           <Text style={itemStyles.info}>🧪 {t("medicines.form")} {item.form || "—"}</Text>
-          <Text style={itemStyles.info}>⌛ {t("medicines.expiry")} {item.expiry || "—"}</Text>
+          <Text style={itemStyles.info}>⌛ {t("medicines.expiry")} {formatExpiryDate(item.expiry) || "—"}</Text>
           <Text style={itemStyles.date}>{t("medicines.added")} {item.createdAt || "—"}</Text>
 
           <View style={itemStyles.buttonsRow}>

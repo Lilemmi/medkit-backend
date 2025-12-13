@@ -17,6 +17,7 @@ export const lightColors = {
   success: "#34C759",
   warning: "#FF9500",
   info: "#007AFF",
+  shadow: "#000000",
 };
 
 export const darkColors = {
@@ -36,6 +37,7 @@ export const darkColors = {
   success: "#30D158",
   warning: "#FF9F0A",
   info: "#0A84FF",
+  shadow: "#000000",
 };
 
 // Хук для получения цветов в зависимости от темы

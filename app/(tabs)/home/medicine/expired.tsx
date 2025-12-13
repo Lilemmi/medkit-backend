@@ -10,7 +10,6 @@ import {
 } from "react-native";
 
 import { getExpiredMedicines } from "../../../../src/database/medicine.service";
-// @ts-expect-error: Модуль не имеет декларации типов
 import { useAuthStore } from "../../../../src/store/authStore";
 import { colors } from "../../../../src/theme/colors";
 
@@ -37,10 +36,12 @@ export default function ExpiredMedicinesScreen() {
 
   // 📌 загрузка данных
   const loadData = async () => {
+    if (!user?.id) return;
+    
     setLoading(true);
 
     try {
-      const data = await getExpiredMedicines();
+      const data = await getExpiredMedicines(user.id);
       setItems(Array.isArray(data) ? (data as Medicine[]) : []);
     } catch (e) {
       console.log("Expired load error:", e);
@@ -51,7 +52,7 @@ export default function ExpiredMedicinesScreen() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [user?.id]);
 
   // 📌 Pull-to-refresh
   const onRefresh = useCallback(async () => {

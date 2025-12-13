@@ -1,18 +1,42 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
+import { BackHandler, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getExpiredMedicines } from "../../../src/database/medicine.service";
+import { useAuthStore } from "../../../src/store/authStore";
+import { useColors } from "../../../src/theme/colors";
+import { useLanguage } from "../../../src/context/LanguageContext";
+import type { MedicineRow } from "../../../src/types/db";
 
 export default function ExpiredScreen() {
-  const [list, setList] = useState([]);
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const colors = useColors();
+  const { t } = useLanguage();
+  const { user } = useAuthStore();
+  const [list, setList] = useState<MedicineRow[]>([]);
+
+  // Обработка системной кнопки "Назад" (Android)
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        router.back();
+        return true;
+      };
+
+      const backHandler = BackHandler.addEventListener("hardwareBackPress", onBackPress);
+      return () => backHandler.remove();
+    }, [router])
+  );
 
   useEffect(() => {
     load();
-  }, []);
+  }, [user?.id]);
 
   async function load() {
-    const data = await getExpiredMedicines();
+    if (!user?.id) return;
+    const data = await getExpiredMedicines(user.id);
     setList(data);
   }
 
@@ -26,20 +50,29 @@ export default function ExpiredScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Просроченные лекарства</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 12, backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Просроченные лекарства</Text>
+        <View style={{ width: 24 }} />
+      </View>
 
-      <ScrollView style={{ width: "100%" }}>
+      <Text style={[styles.title, { color: colors.text }]}>Просроченные лекарства</Text>
+
+      <ScrollView style={{ width: "100%", paddingHorizontal: 22 }}>
         {list.length === 0 && (
-          <Text style={styles.empty}>Отлично! Здесь пока пусто 👏</Text>
+          <Text style={[styles.empty, { color: colors.textSecondary }]}>Отлично! Здесь пока пусто 👏</Text>
         )}
 
         {list.map((item) => (
           <TouchableOpacity
             key={item.id}
-            style={styles.card}
+            style={[styles.card, { backgroundColor: colors.surface }]}
             onPress={() =>
-              router.push(`/ (tabs)/home/medicine/${item.id}`)
+              router.push(`/(tabs)/home/medicine/${item.id}` as any)
             }
           >
             <View style={styles.row}>
@@ -50,10 +83,10 @@ export default function ExpiredScreen() {
               />
 
               <View style={styles.info}>
-                <Text style={styles.name}>{item.name}</Text>
+                <Text style={[styles.name, { color: colors.text }]}>{item.name}</Text>
 
                 <Text style={styles.expiredText}>
-                  истёк {formatDaysAgo(item.expiry)}
+                  истёк {item.expiry ? formatDaysAgo(item.expiry) : "—"}
                 </Text>
               </View>
             </View>
@@ -67,25 +100,38 @@ export default function ExpiredScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 22,
-    backgroundColor: "#F7F8FA",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    flex: 1,
+    textAlign: "center",
+    marginHorizontal: 12,
   },
   title: {
     fontSize: 28,
     fontWeight: "700",
     marginBottom: 20,
-    color: "#2D2D2D",
+    marginTop: 20,
+    paddingHorizontal: 22,
   },
   empty: {
     textAlign: "center",
     marginTop: 50,
     fontSize: 18,
-    color: "#777",
+    paddingHorizontal: 22,
   },
 
   card: {
     width: "100%",
-    backgroundColor: "#fff",
     padding: 18,
     borderRadius: 16,
     marginBottom: 14,
@@ -107,7 +153,6 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#333",
   },
 
   expiredText: {

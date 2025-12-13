@@ -2,25 +2,31 @@
   "expo": {
     "name": "Smart Aid Kit",
     "slug": "smart-aid-kit",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "orientation": "portrait",
 
     "icon": "./assets/images/icon.png",
     "scheme": "smartaidkit",
     "userInterfaceStyle": "automatic",
+
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.smartfamily.medkit",
-        "infoPlist": {
-          "CFBundleDisplayName": "Smart Aid Kit",
-          "NSFaceIDUsageDescription": "Для безопасного входа.",
-          "NSUserTrackingUsageDescription": "Приложение использует уведомления.",
-          "NSUserNotificationUsageDescription": "Приложение отправляет уведомления о лекарствах."
-        }
+      "bundleIdentifier": "com.profesional88.smartaidkit",
+      "infoPlist": {
+        "CFBundleDisplayName": "Smart Aid Kit",
+        "NSFaceIDUsageDescription": "Для безопасного входа.",
+        "NSUserTrackingUsageDescription": "Приложение использует уведомления.",
+        "NSUserNotificationUsageDescription": "Приложение отправляет уведомления о лекарствах.",
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": ["smartaidkit", "exp+smart-aid-kit"]
+          }
+        ]
+      }
     },
 
     "android": {
-      "package": "com.smartfamily.medkit",
+      "package": "com.profesional88.smartaidkit",
       "permissions": [
         "INTERNET",
         "VIBRATE",
@@ -33,49 +39,55 @@
       }
     },
 
-    "web": {
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
-    },
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
 
-      "plugins": [
-        "./plugins/with-disable-dev-launcher.js",
-        "expo-router",
-        "expo-updates",
       [
         "expo-build-properties",
         {
           "android": {
-            "gradleProperties": {
-              "org.gradle.jvmargs": "-Xmx8192m -XX:MaxMetaspaceSize=4096m -XX:MetaspaceSize=2048m -XX:+HeapDumpOnOutOfMemoryError -XX:+UseG1GC -XX:MaxDirectMemorySize=2048m",
-              "kotlin.daemon.jvmargs": "-Xmx4096m -XX:MaxMetaspaceSize=4096m",
-              "ksp.jvmargs": "-Xmx4096m -XX:MaxMetaspaceSize=4096m",
-              "org.gradle.daemon": "true",
-              "org.gradle.daemon.idletimeout": "10800000",
-              "org.gradle.parallel": "true",
-              "org.gradle.configureondemand": "true",
-              "org.gradle.caching": "true",
-              "org.gradle.workers.max": "4",
-              "android.enableJetifier": "true",
-              "android.useAndroidX": "true",
-              "android.lint.useKotlinLinter": "false",
-              "android.lintOptions.abortOnError": "false",
-              "android.lint.checkReleaseBuilds": "false",
-              "android.lint.checkAllWarnings": "false",
-              "android.lint.warningAll": "false",
-              "android.lint.checkDependencies": "false",
-              "android.lint.checkGeneratedSources": "false",
-              "android.lint.disable": "true",
-              "android.lint.enabled": "false",
-              "android.disableAutomaticComponentCreation": "true",
-              "org.gradle.warning.mode": "none",
-              "expo.newArch.enabled": "false"
-            },
+            "newArchEnabled": true,
             "enableProguardInReleaseBuilds": false,
-            "enableShrinkResourcesInReleaseBuilds": false
+            "enableShrinkResourcesInReleaseBuilds": false,
+            "enableMinifyInReleaseBuilds": false,
+            "gradleProperties": {
+              "org.gradle.jvmargs": "-Xmx8192m -XX:MaxMetaspaceSize=4096m",
+              "kotlin.daemon.jvmargs": "-Xmx4096m",
+              "ksp.jvmargs": "-Xmx4096m",
+              "org.gradle.daemon": "true",
+              "org.gradle.parallel": "true",
+              "org.gradle.configureondemand": "true"
+            }
           }
         }
       ],
+
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#1D9BF0",
+          "mode": "production",
+          "androidMode": "default",
+          "iosDisplayInForeground": true,
+          "androidChannelId": "medication-reminders",
+          "androidChannelName": "Напоминания о лекарствах",
+          "androidChannelDescription": "Критически важные напоминания о приеме лекарств",
+          "androidChannelImportance": "max",
+          "androidChannelShowBadge": true,
+          "androidChannelEnableVibrate": true,
+          "androidChannelEnableLights": true
+        }
+      ],
+
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": "Используется для безопасного входа."
+        }
+      ],
+
       [
         "expo-splash-screen",
         {
@@ -84,20 +96,8 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-sqlite",
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/images/notification-icon.png",
-          "color": "#1D9BF0"
-        }
-      ],
-      [
-        "expo-secure-store",
-        {
-          "faceIDPermission": "Используется для безопасного входа."
-        }
-      ]
+
+      "expo-updates"
     ],
 
     "experiments": {
@@ -108,16 +108,15 @@
     "extra": {
       "railwayApiUrl": "https://medkit-backend-production.up.railway.app",
       "apiUrl": "https://medkit-backend-production.up.railway.app",
-      "router": {},
-      "eas": {
-        "projectId": "05ecd41f-17b5-4377-896e-c0c0f3fa4265"
-      }
+      "router": {}
     },
+
     "updates": {
       "enabled": true,
       "fallbackToCacheTimeout": 0
     },
-    "runtimeVersion": "1.0.0",
-    "owner": "lilemmi"
+
+    "runtimeVersion": "2.0.0",
+    "owner": "profesional88"
   }
 }

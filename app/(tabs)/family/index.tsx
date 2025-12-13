@@ -1,22 +1,58 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
-import { useState } from "react";
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useCallback, useState } from "react";
+import { BackHandler, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getAllFamilyMembers } from "../../../src/services/family.service";
 import { useColors } from "../../../src/theme/colors";
 import { useLanguage } from "../../../src/context/LanguageContext";
+import { useAuthStore } from "../../../src/store/authStore";
 
 export default function FamilyScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const colors = useColors();
   const { t } = useLanguage();
+  const { user } = useAuthStore();
   const [members, setMembers] = useState<any[]>([]);
+
+  // Обработка системной кнопки "Назад" на вкладке "Семья"
+  // При нажатии переходим на вкладку "Главная"
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        // Проверяем, можно ли вернуться назад в навигации
+        if (router.canGoBack()) {
+          router.back();
+          return true;
+        }
+        
+        // Если нельзя вернуться назад - переходим на вкладку "Главная"
+        // Корневой экран вкладки - стандартное поведение Android (не обрабатываем)
+        return false;
+        return true;
+      };
+
+      const backHandler = BackHandler.addEventListener("hardwareBackPress", onBackPress);
+      return () => backHandler.remove();
+    }, [router])
+  );
 
   async function load() {
     const data = await getAllFamilyMembers();
-    setMembers(data);
+    // Добавляем профиль пользователя в начало списка
+    const allMembers = [];
+    if (user) {
+      allMembers.push({
+        id: `user-${user.id}`,
+        name: user.name || "Я",
+        role: "Пользователь",
+        photoUri: user.photoUri,
+        isUser: true,
+      });
+    }
+    allMembers.push(...(data || []));
+    setMembers(allMembers);
   }
 
   useFocusEffect(() => {
@@ -83,7 +119,14 @@ export default function FamilyScreen() {
         <TouchableOpacity
           key={m.id}
           style={styles.card}
-          onPress={() => router.push(`/(tabs)/family/profile/${m.id}`)}
+          onPress={() => {
+            if (m.isUser) {
+              // Для пользователя переходим в редактирование профиля
+              router.push("/(tabs)/more/settings/profile");
+            } else {
+              router.push(`/(tabs)/family/profile/${m.id}`);
+            }
+          }}
         >
           <Image
             source={
@@ -98,12 +141,20 @@ export default function FamilyScreen() {
             <Text style={styles.name}>{m.name}</Text>
             <Text style={styles.role}>{m.role || t("family.roleNotSpecified")}</Text>
           </View>
+          {m.isUser && (
+            <MaterialCommunityIcons
+              name="account-circle"
+              size={24}
+              color={colors.primary}
+              style={{ marginLeft: "auto" }}
+            />
+          )}
         </TouchableOpacity>
       ))}
 
         <TouchableOpacity
           style={styles.addBtn}
-          onPress={() => router.push("/family/add")}
+          onPress={() => router.push("/(tabs)/family/add")}
         >
           <Text style={styles.addBtnText}>+ {t("family.add")}</Text>
         </TouchableOpacity>

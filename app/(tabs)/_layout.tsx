@@ -82,32 +82,6 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* Оповещения скрыты из табов, но доступны через роутинг */}
-      <Tabs.Screen
-        name="notifications"
-        options={{
-          href: null, // Скрывает вкладку из нижней навигации
-          headerShown: false,
-        }}
-      />
-
-      {/* Настройки скрыты из табов, но доступны через роутинг */}
-      <Tabs.Screen
-        name="settings"
-        options={{
-          href: null, // Скрывает вкладку из нижней навигации
-          headerShown: false,
-        }}
-      />
-
-      {/* Трекер здоровья скрыт из табов, но доступен через роутинг */}
-      <Tabs.Screen
-        name="health"
-        options={{
-          href: null, // Скрывает вкладку из нижней навигации
-          headerShown: false,
-        }}
-      />
     </Tabs>
   );
 }

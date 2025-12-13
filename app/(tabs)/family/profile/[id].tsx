@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
+import { BackHandler, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getFamilyMemberById } from "../../../../src/services/family.service";
 import { useColors } from "../../../../src/theme/colors";
@@ -15,6 +15,19 @@ export default function FamilyProfileScreen() {
   const { t } = useLanguage();
 
   const [member, setMember] = useState<any>(null);
+
+  // Обработка системной кнопки "Назад" (Android)
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        router.back();
+        return true;
+      };
+
+      const backHandler = BackHandler.addEventListener("hardwareBackPress", onBackPress);
+      return () => backHandler.remove();
+    }, [router])
+  );
 
   useEffect(() => {
     load();
@@ -174,8 +187,10 @@ export default function FamilyProfileScreen() {
         {/* Имя */}
         <Text style={styles.name}>{member.name}</Text>
 
-        {/* Информация */}
+        {/* Основная информация */}
         <View style={styles.infoCard}>
+          <Text style={[styles.value, { marginBottom: 16, fontSize: 16 }]}>Основная информация</Text>
+          
           {/* Роль */}
           {member.role ? (
             <View style={{ marginBottom: 12 }}>
@@ -185,18 +200,80 @@ export default function FamilyProfileScreen() {
           ) : null}
 
           {/* Дата рождения */}
-          {member.birthdate ? (
+          {(member.birthdate || member.birthDate) ? (
             <View style={{ marginBottom: 12 }}>
-              <Text style={styles.field}>{t("family.birthdateLabel")}</Text>
-              <Text style={styles.value}>{member.birthdate}</Text>
+              <Text style={styles.field}>Дата рождения</Text>
+              <Text style={styles.value}>
+                {member.birthDate || member.birthdate}
+              </Text>
             </View>
           ) : null}
 
-          {/* Аллергии */}
-          <View>
-            <Text style={styles.field}>{t("family.allergiesLabel")}</Text>
-            <Text style={styles.value}>{member.allergies || t("family.notSpecified")}</Text>
+          {/* Пол */}
+          {member.gender ? (
+            <View style={{ marginBottom: 12 }}>
+              <Text style={styles.field}>Пол</Text>
+              <Text style={styles.value}>
+                {member.gender === "male" ? "Мужской" : 
+                 member.gender === "female" ? "Женский" : "Другое"}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+
+        {/* Медицинская информация */}
+        {(member.weight || member.height || member.chronicDiseases || member.medicalConditions || member.organConditions) && (
+          <View style={styles.infoCard}>
+            <Text style={[styles.value, { marginBottom: 16, fontSize: 16 }]}>Медицинская информация</Text>
+            
+            {/* Вес и рост */}
+            {(member.weight || member.height) && (
+              <View style={{ flexDirection: "row", marginBottom: 12 }}>
+                {member.weight && (
+                  <View style={{ flex: 1, marginRight: 8 }}>
+                    <Text style={styles.field}>Вес</Text>
+                    <Text style={styles.value}>{member.weight} кг</Text>
+                  </View>
+                )}
+                {member.height && (
+                  <View style={{ flex: 1, marginLeft: 8 }}>
+                    <Text style={styles.field}>Рост</Text>
+                    <Text style={styles.value}>{member.height} см</Text>
+                  </View>
+                )}
+              </View>
+            )}
+
+            {/* Хронические заболевания */}
+            {member.chronicDiseases && Array.isArray(member.chronicDiseases) && member.chronicDiseases.length > 0 && (
+              <View style={{ marginBottom: 12 }}>
+                <Text style={styles.field}>Хронические заболевания</Text>
+                <Text style={styles.value}>{member.chronicDiseases.join(", ")}</Text>
+              </View>
+            )}
+
+            {/* Особые состояния */}
+            {member.medicalConditions && Array.isArray(member.medicalConditions) && member.medicalConditions.length > 0 && (
+              <View style={{ marginBottom: 12 }}>
+                <Text style={styles.field}>Особые состояния</Text>
+                <Text style={styles.value}>{member.medicalConditions.join(", ")}</Text>
+              </View>
+            )}
+
+            {/* Состояния органов */}
+            {member.organConditions && Array.isArray(member.organConditions) && member.organConditions.length > 0 && (
+              <View style={{ marginBottom: 12 }}>
+                <Text style={styles.field}>Состояния органов</Text>
+                <Text style={styles.value}>{member.organConditions.join(", ")}</Text>
+              </View>
+            )}
           </View>
+        )}
+
+        {/* Аллергии */}
+        <View style={styles.infoCard}>
+          <Text style={styles.field}>{t("family.allergiesLabel")}</Text>
+          <Text style={styles.value}>{member.allergies || t("family.notSpecified")}</Text>
         </View>
 
         {/* Кнопка редактировать */}

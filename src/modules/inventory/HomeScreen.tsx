@@ -3,7 +3,8 @@ import { useState, useEffect, useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { getAllMedicines } from "../../database/medicine.service";
 import { useAuthStore } from "../../store/authStore";
-import { fullSync, isOnline } from "../../services/medicine-sync.service";
+import { fullSync } from "../../services/medicine-sync.service";
+import { isOnline } from "../../utils/network";
 
 export default function HomeScreen({ navigation }: any) {
   const { user } = useAuthStore();
@@ -237,13 +238,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
-}); { flex: 1, padding: 20, backgroundColor: "#fff" },
-  title: { fontSize: 28, fontWeight: "bold", marginBottom: 20 },
-  button: {
-    backgroundColor: "#4A90E2",
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 15,
-  },
-  buttonText: { color: "#fff", fontSize: 18, textAlign: "center" },
 });

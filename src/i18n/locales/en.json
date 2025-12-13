@@ -17,7 +17,8 @@
     "yes": "Yes",
     "no": "No",
     "ok": "OK",
-    "optional": "optional"
+    "optional": "optional",
+    "grantPermission": "Grant Permission"
   },
   "tabs": {
     "medkit": "Home",
@@ -34,6 +35,7 @@
     "description": "View your daily medication schedule and mark taken medications",
     "addMedication": "Add Medicine",
     "scanPrescription": "Prescription Scanner",
+    "schedule": "Medication Schedule",
     "today": "Today",
     "days": {
       "mon": "MON",
@@ -45,18 +47,18 @@
       "sun": "SUN"
     },
     "months": {
-      "jan": "Jan",
-      "feb": "Feb",
-      "mar": "Mar",
-      "apr": "Apr",
+      "jan": "January",
+      "feb": "February",
+      "mar": "March",
+      "apr": "April",
       "may": "May",
-      "jun": "Jun",
-      "jul": "Jul",
-      "aug": "Aug",
-      "sep": "Sep",
-      "oct": "Oct",
-      "nov": "Nov",
-      "dec": "Dec"
+      "jun": "June",
+      "jul": "July",
+      "aug": "August",
+      "sep": "September",
+      "oct": "October",
+      "nov": "November",
+      "dec": "December"
     },
     "logoutTitle": "Log Out",
     "logoutConfirm": "Are you sure you want to log out?",
@@ -76,7 +78,34 @@
     "logout": "Log Out",
     "logoutConfirm": "Are you sure you want to log out?",
     "logoutTitle": "Log Out",
-    "help": "Help & Support"
+    "help": "Help & Support",
+    "notifications": "Notifications",
+    "notificationSettings": "Notification Settings",
+    "enableNotifications": "Enable Notifications",
+    "enableNotificationsDescription": "Allow the app to send notifications",
+    "soundAndVibration": "Sound and Vibration",
+    "enableSound": "Enable Sound",
+    "enableSoundDescription": "Play sound when receiving notifications",
+    "enableVibration": "Enable Vibration",
+    "enableVibrationDescription": "Vibrate when receiving notifications",
+    "enableLights": "Enable LED",
+    "enableLightsDescription": "Flash LED for notifications (Android)",
+    "additionalSettings": "Additional Settings",
+    "enableBadge": "Show Badge",
+    "enableBadgeDescription": "Display unread notification count on icon",
+    "showOnLockScreen": "Show on Lock Screen",
+    "showOnLockScreenDescription": "Display notifications on lock screen",
+    "generalSettings": "General Settings",
+    "notificationsGranted": "Permission Granted",
+    "notificationsDenied": "Permission Denied",
+    "notificationsNotRequested": "Permission Not Requested",
+    "notificationPermissionStatus": "Permission Status",
+    "requestNotificationPermission": "Request Permission",
+    "notificationPermissionTitle": "Notification Permission",
+    "notificationPermissionMessage": "Notification permission is required in device settings",
+    "notificationSaveError": "Failed to save settings",
+    "notificationChannelName": "Medication Reminders",
+    "notificationChannelDescription": "Critical medication reminders"
   },
   "add": {
     "title": "Add Medicine",
@@ -99,10 +128,40 @@
     "notSpecified": "Not specified",
     "addToMedkit": "Add to Medkit",
     "scanAgain": "Scan Again",
+    "expiryModalTitle": "Expiry Date Not Found",
+    "expiryModalTitleConfirm": "Confirm Expiry Date",
+    "expiryModalSubtitle": "Tap the field below to select a date",
+    "expiryModalSubtitleConfirm": "Please check and if necessary confirm the expiry date of the medicine. Tap the field below to select month and year.",
+    "expiryPlaceholder": "Tap to select month and year",
+    "expiryHint": "Select the month and year of the medicine expiry date",
+    "expiryLabel": "Expiry Date (MM.YYYY)",
+    "expiryRequired": "Expiry date is required",
+    "expiryRequiredMessage": "Please select the expiry date of the medicine. This is a required field for safety.",
+    "expiryModalSubtitleRequired": "Please specify the expiry date of the medicine. Tap the field below to select month and year.",
+    "expiryFormatError": "Please select month and year (format MM.YYYY)",
+    "expiryNotSelected": "Date not selected",
+    "expirySelectHint": "Please tap the \"Expiry Date\" field above to open the calendar and select month and year.",
+    "expirySkipQuestion": "Do you want to continue without specifying the expiry date?",
+    "selectDate": "Select Date",
+    "skip": "Skip",
+    "quantityModalTitle": "Number of Packages",
+    "quantityModalSubtitle": "Specify the number of packages of this medicine you purchased",
+    "quantityLabel": "Number of packages",
+    "forWhom": "Who is this medicine for?",
     "error": "Analysis Error",
     "jsonError": "JSON Parsing Error",
     "jsonNotFound": "Error: JSON not found",
-    "success": "Medicine added to medkit"
+    "parseError": "JSON parsing error",
+    "analysisComplete": "Analysis complete",
+    "analysisError": "Analysis error. Please try again or use manual input.",
+    "analysisErrorHint": "Try:\n\n1. Improve lighting\n2. Make sure the package is clearly visible\n3. Use manual input",
+    "quotaExceededTitle": "Request Limit Exceeded",
+    "quotaExceeded": "You have exceeded the daily request limit. Please try again tomorrow.",
+    "quotaExceededMessage": "You have exceeded the daily request limit. Please try again tomorrow.",
+    "manualInput": "Manual Input",
+    "success": "Medicine added to medkit",
+    "saveError": "Failed to save medicine",
+    "noData": "No data to save"
   },
   "manual": {
     "title": "Add Medicine Manually",
@@ -115,6 +174,7 @@
   "medicines": {
     "empty": "Medkit is empty",
     "emptySubtext": "Add your first medicine",
+    "medicine": "Medicine",
     "dosage": "Dosage:",
     "form": "Form:",
     "expiry": "Expires:",
@@ -127,7 +187,46 @@
     "noExpiry": "No expiry date",
     "noExpiryMessage": "Expiry date not specified",
     "notificationSet": "Notification set",
-    "notificationMessage": "I'll remind you 2 days before 👍"
+    "notificationMessage": "I'll remind you 2 days before 👍",
+    "storageTemperature": {
+      "title": "Storage Conditions",
+      "warning": "Room temperature is {{currentTemp}}°C. {{medicineName}} may spoil.",
+      "refrigeratorWarning": "Medicine should be stored in refrigerator (2-8°C), but current temperature is {{currentTemp}}°C. Medicine may spoil.",
+      "maxTempWarning": "Room temperature is {{currentTemp}}°C. Medicine should be stored at temperature not higher than {{maxTemp}}C and may spoil.",
+      "minTempWarning": "Room temperature is {{currentTemp}}°C. Medicine should be stored at temperature not lower than {{minTemp}}°C.",
+      "recommendation": "It is recommended to move the medicine to a more suitable place."
+    }
+  },
+  "medicineDetails": {
+    "sideEffects": "Side Effects",
+    "contraindications": "Contraindications",
+    "mild": "Mild",
+    "moderate": "Moderate",
+    "severe": "Severe",
+    "frequency": "Frequency",
+    "pregnancy": "Pregnancy",
+    "lactation": "Lactation",
+    "hypertension": "Hypertension",
+    "asthma": "Asthma",
+    "diabetes": "Diabetes",
+    "kidneyDisease": "Kidney Disease",
+    "liverDisease": "Liver Disease",
+    "heartDisease": "Heart Disease",
+    "cardiovascularDiseases": "Cardiovascular Diseases",
+    "gastrointestinalDiseases": "Gastrointestinal Diseases",
+    "ageRestrictions": "Age Restrictions",
+    "allergies": "Allergies",
+    "other": "Other"
+  },
+  "schedule": {
+    "title": "Medication Schedule",
+    "markAsTaken": "Mark as Taken",
+    "markAsTakenQuestion": "Did you take {{medicineName}}?",
+    "taken": "Taken",
+    "missed": "Missed",
+    "soon": "Soon",
+    "markError": "Error",
+    "markErrorMessage": "Failed to mark medicine as taken"
   },
   "auth": {
     "login": "Login",
@@ -352,16 +451,16 @@
     "appVersion": "App Version",
     "expoVersion": "Expo Version",
     "aboutMedkit": "About Smart Aid Kit",
-    "description": "Smart Aid Kit is a modern app for managing medicines and health for the whole family. Track expiry dates, create reminders and maintain health history.",
+    "description": "Smart Aid Kit is a modern app for managing medicines and health for the whole family. Track expiry dates, create medication reminders, maintain health history and manage your family's medicine cabinet. The app helps you never miss a dose, warns about expired medications and tracks important health indicators.",
     "mainFeatures": "Main Features",
-    "feature1": "Medicine management with reminders",
-    "feature2": "Package scanning for automatic recognition",
-    "feature3": "Health tracker for monitoring indicators",
-    "feature4": "Family member profile management",
-    "feature5": "Expiry date notifications",
+    "feature1": "Medicine management with medication reminders",
+    "feature2": "Package scanning for automatic medicine recognition",
+    "feature3": "Health tracker for monitoring indicators (blood pressure, pulse, temperature, etc.)",
+    "feature4": "Family member profile management with individual settings",
+    "feature5": "Smart notifications for expiry dates and refill reminders",
     "contacts": "Contacts",
-    "contactText": "If you have questions or suggestions, contact us:",
-    "email": "support@medkit.com"
+    "contactText": "If you have questions, suggestions or found a bug, contact us:",
+    "email": "support@smartaidkit.com"
   },
   "chat": {
     "title": "AI Chat",
@@ -412,5 +511,66 @@
     "dose": "Dosage",
     "timesPerDay": "Times per day",
     "times": "Times"
+  },
+  "diary": {
+    "title": "Diary",
+    "empty": "No diary entries. Start tracking your health!",
+    "hint": "Add entries through sections:\n• Symptoms\n• Mood\n• Activity\n• Sleep\n• Doctor Visits\n• Lab Results\n• Health Metrics",
+    "goToHealth": "Go to Health Trackers"
+  },
+  "doctors": {
+    "title": "Doctors",
+    "add": "Add Doctor",
+    "edit": "Edit Doctor",
+    "name": "Doctor Name",
+    "namePlaceholder": "Enter doctor name",
+    "specialty": "Specialty",
+    "specialtyPlaceholder": "e.g., Therapist, Cardiologist",
+    "phone": "Phone",
+    "phonePlaceholder": "+1 (999) 123-4567",
+    "email": "Email",
+    "emailPlaceholder": "doctor@example.com",
+    "address": "Address",
+    "addressPlaceholder": "Clinic or office address",
+    "notes": "Notes",
+    "notesPlaceholder": "Additional information",
+    "nameRequired": "Enter doctor name",
+    "empty": "No doctors added. Add your first doctor!",
+    "deleteConfirm": "Delete doctor?",
+    "deleteMessage": "Are you sure you want to delete this doctor?",
+    "deleteError": "Failed to delete doctor",
+    "saveError": "Failed to save doctor",
+    "loadError": "Failed to load doctors"
+  },
+  "help": {
+    "title": "Help & Support",
+    "faq": "Frequently Asked Questions",
+    "contact": "Contact Us",
+    "contactText": "If you have questions or suggestions, write to us:",
+    "faq1": {
+      "question": "How to add medicine?",
+      "answer": "Go to the 'Home' tab and click 'Add Medicine'. You can add medicine manually or scan the package."
+    },
+    "faq2": {
+      "question": "How to create a reminder?",
+      "answer": "Open the medicine and click 'Add Reminder'. Set the time and days of the week for taking."
+    },
+    "faq3": {
+      "question": "How to sync data?",
+      "answer": "Data syncs automatically when connected to the internet. You can also perform manual sync in settings."
+    },
+    "faq4": {
+      "question": "How to add a family member?",
+      "answer": "Go to the 'Family' tab and click 'Add'. Fill in the family member information."
+    },
+    "faq5": {
+      "question": "How does the prescription scanner work?",
+      "answer": "Click 'Prescription Scanner' on the home screen, take a photo of the prescription. The app will automatically recognize medicines and add them to the medicine cabinet."
+    }
+  },
+  "share": {
+    "title": "Share App",
+    "message": "Try Smart Aid Kit - a smart medicine cabinet for the whole family! Manage medicines, track health and never forget to take medications.",
+    "description": "Share the app with friends and family"
   }
 }

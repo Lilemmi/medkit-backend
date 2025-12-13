@@ -1,42 +1,102 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useState, useEffect, useRef } from "react";
-import { Alert, Animated, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useFocusEffect, usePathname, useRouter } from "expo-router";
+import { useCallback, useState, useEffect, useRef } from "react";
+import { Alert, Animated, BackHandler, FlatList, Image, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import LottieView from "lottie-react-native";
 import { useAuthStore } from "../../../src/store/authStore";
 import { useColors } from "../../../src/theme/colors";
 import { useLanguage } from "../../../src/context/LanguageContext";
+import { getAllReminders } from "../../../src/database/reminders.service";
+import { getExpiredMedicines, getExpiringSoonMedicines } from "../../../src/database/medicine.service";
+import { formatExpiryDate } from "../../../src/utils/date-formatter";
+import Modal from "../../../src/components/Modal";
+
+// Загружаем анимацию Medical Shield
+const medicalShieldAnimation = require("../../../assets/animations/medical-shield.json");
 
 export default function HomeScreen() {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, logout } = useAuthStore();
   const insets = useSafeAreaInsets();
   const colors = useColors();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  // Анимации для появления Lottie анимации
+  const animationFade = useRef(new Animated.Value(0)).current;
+  const animationScale = useRef(new Animated.Value(0.9)).current;
   
-  // Анимации для иллюстрации
-  const penAnimation = useRef(new Animated.Value(0)).current;
-  const penPosition = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
-  const pillAnimations = useRef([
-    new Animated.Value(0),
-    new Animated.Value(0),
-    new Animated.Value(0),
-  ]).current;
-  const pillPulseAnimations = useRef([
-    new Animated.Value(1),
-    new Animated.Value(1),
-    new Animated.Value(1),
-  ]).current;
-  const pillRotateAnimations = useRef([
-    new Animated.Value(0),
-    new Animated.Value(0),
-    new Animated.Value(0),
-  ]).current;
-  const calendarFade = useRef(new Animated.Value(0)).current;
-  const calendarScale = useRef(new Animated.Value(0.9)).current;
-  const writingAnimation = useRef(new Animated.Value(0)).current;
+  // Состояние для модального окна уведомлений
+  const [showNotificationsModal, setShowNotificationsModal] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
+
+  // Убеждаемся, что при фокусе на главном экране мы действительно на главном экране
+  // Если по какой-то причине мы не на главном экране, сбрасываем на главный
+  useFocusEffect(
+    useCallback(() => {
+      const currentPath = pathname || "";
+      
+      // Если мы на главном экране index, но путь указывает на другой экран
+      // Это может произойти при быстром переключении вкладок
+      if (currentPath && 
+          currentPath.includes("/(tabs)/home") && 
+          currentPath !== "/(tabs)/home" &&
+          currentPath !== "/(tabs)/home/" &&
+          !currentPath.endsWith("/home/index") &&
+          !currentPath.endsWith("/(tabs)/home/index")) {
+        
+        // Немедленно переходим на главный экран
+        // Используем requestAnimationFrame для более плавного перехода
+        // Убрана логика router.replace() - навигация управляется Tab Navigator
+      }
+    }, [pathname, router])
+  );
+
+  // Обработка системной кнопки "Назад" на главном экране
+  // Двойное нажатие для выхода из приложения (сворачивание)
+  const backPressCountRef = useRef(0);
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        // Проверяем, можно ли вернуться назад в навигации
+        if (router.canGoBack()) {
+          router.back();
+          return true;
+        }
+
+        // Если нельзя вернуться назад - проверяем двойное нажатие
+        const now = Date.now();
+        if (backPressCountRef.current === 0 || now - backPressCountRef.current > 2000) {
+          // Первое нажатие или прошло больше 2 секунд
+          backPressCountRef.current = now;
+          Alert.alert(
+            "Выход из приложения",
+            "Нажмите еще раз для выхода",
+            [{ text: "Отмена" }],
+            { cancelable: true }
+          );
+          return true;
+        } else {
+          // Второе нажатие в течение 2 секунд - выход из приложения
+          backPressCountRef.current = 0;
+          if (Platform.OS === 'android') {
+            BackHandler.exitApp();
+          }
+          return true;
+        }
+      };
+
+      const backHandler = BackHandler.addEventListener("hardwareBackPress", onBackPress);
+      return () => {
+        backHandler.remove();
+        backPressCountRef.current = 0;
+      };
+    }, [router])
+  );
+  
+  const today = new Date();
 
   // Английские названия месяцев для иллюстрации
   const englishMonths = [
@@ -44,172 +104,95 @@ export default function HomeScreen() {
     "July", "August", "September", "October", "November", "December"
   ];
 
+  // Загрузка уведомлений
+  async function loadNotifications() {
+    if (!user?.id) return;
+
+    try {
+      setLoadingNotifications(true);
+      const [remindersData, expiredData, expiringSoonData] = await Promise.all([
+        getAllReminders(user.id),
+        getExpiredMedicines(user.id),
+        getExpiringSoonMedicines(user.id),
+      ]);
+
+      const formatTime = (hour: number, minute: number) => {
+        const h = hour.toString().padStart(2, "0");
+        const m = minute.toString().padStart(2, "0");
+        return `${h}:${m}`;
+      };
+
+      const allNotifications = [
+        ...expiredData.map((med: any) => ({
+          id: `expired-${med.id}`,
+          type: "expired",
+          title: `⛔ ${t("notifications.expired") || "Просрочено"}`,
+          subtitle: `${med.name} - ${t("notifications.expiredSubtitle") || "Срок годности истёк"}`,
+          date: formatExpiryDate(med.expiry),
+          medicine: med,
+        })),
+        ...expiringSoonData.map((med: any) => ({
+          id: `expiring-${med.id}`,
+          type: "expiring",
+          title: `⚠️ ${t("notifications.expiring") || "Скоро истекает"}`,
+          subtitle: `${med.name} - ${t("notifications.expiringSubtitle") || "Срок годности скоро истечёт"}`,
+          date: formatExpiryDate(med.expiry),
+          medicine: med,
+        })),
+        ...(remindersData || [])
+          .filter((r: any) => r.isActive)
+          .map((reminder: any) => ({
+            id: `reminder-${reminder.id}`,
+            type: "reminder",
+            title: reminder.title,
+            subtitle: reminder.medicineName
+              ? `💊 ${reminder.medicineName}`
+              : reminder.body || t("notifications.reminder") || "Напоминание",
+            date: `${t("notifications.todayAt") || "Сегодня в"} ${formatTime(reminder.hour, reminder.minute)}`,
+            reminder,
+          })),
+      ];
+
+      setNotifications(allNotifications);
+    } catch (error) {
+      console.error("Error loading notifications:", error);
+      setNotifications([]);
+    } finally {
+      setLoadingNotifications(false);
+    }
+  }
+
+  // Открытие модального окна уведомлений
+  const handleNotificationsPress = async () => {
+    await loadNotifications();
+    setShowNotificationsModal(true);
+  };
+
   useEffect(() => {
-    // Начальная анимация появления календаря
+    // Плавное появление Lottie анимации
     Animated.parallel([
-      Animated.timing(calendarFade, {
+      Animated.timing(animationFade, {
         toValue: 1,
         duration: 600,
         useNativeDriver: true,
       }),
-      Animated.spring(calendarScale, {
+      Animated.spring(animationScale, {
         toValue: 1,
         tension: 50,
         friction: 7,
         useNativeDriver: true,
       }),
     ]).start();
-
-    // Функция для создания цикла анимации записи
-    const createWritingCycle = () => {
-      // Сброс пилюль
-      pillAnimations.forEach(anim => anim.setValue(0));
-      writingAnimation.setValue(0);
-
-      // Анимация пера - движение как при записи
-      const penMoveAnim = Animated.sequence([
-        // Перо появляется и движется
-        Animated.parallel([
-          Animated.timing(penAnimation, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-          Animated.timing(penPosition, {
-            toValue: { x: -15, y: -10 },
-            duration: 400,
-            useNativeDriver: true,
-          }),
-        ]),
-        // Запись первой пилюли
-        Animated.parallel([
-          Animated.timing(writingAnimation, {
-            toValue: 0.33,
-            duration: 500,
-            useNativeDriver: true,
-          }),
-          Animated.spring(pillAnimations[0], {
-            toValue: 1,
-            tension: 40,
-            friction: 5,
-            useNativeDriver: true,
-          }),
-        ]),
-        // Движение пера ко второй позиции
-        Animated.timing(penPosition, {
-          toValue: { x: 0, y: 5 },
-          duration: 400,
-          useNativeDriver: true,
-        }),
-        // Запись второй пилюли
-        Animated.parallel([
-          Animated.timing(writingAnimation, {
-            toValue: 0.66,
-            duration: 500,
-            useNativeDriver: true,
-          }),
-          Animated.spring(pillAnimations[1], {
-            toValue: 1,
-            tension: 40,
-            friction: 5,
-            useNativeDriver: true,
-          }),
-        ]),
-        // Движение пера к третьей позиции
-        Animated.timing(penPosition, {
-          toValue: { x: 15, y: -5 },
-          duration: 400,
-          useNativeDriver: true,
-        }),
-        // Запись третьей пилюли
-        Animated.parallel([
-          Animated.timing(writingAnimation, {
-            toValue: 1,
-            duration: 500,
-            useNativeDriver: true,
-          }),
-          Animated.spring(pillAnimations[2], {
-            toValue: 1,
-            tension: 40,
-            friction: 5,
-            useNativeDriver: true,
-          }),
-        ]),
-        // Перо уходит
-        Animated.parallel([
-          Animated.timing(penAnimation, {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-          Animated.timing(penPosition, {
-            toValue: { x: 0, y: 0 },
-            duration: 300,
-            useNativeDriver: true,
-          }),
-        ]),
-        // Пауза перед следующим циклом
-        Animated.delay(1500),
-      ]);
-
-      return Animated.loop(penMoveAnim);
-    };
-
-    const writingCycle = createWritingCycle();
-    writingCycle.start();
-
-    // Постоянная анимация пульсации для таблеточек
-    const pulseAnims = pillPulseAnimations.map((anim, index) =>
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(anim, {
-            toValue: 1.15,
-            duration: 800 + index * 200,
-            useNativeDriver: true,
-          }),
-          Animated.timing(anim, {
-            toValue: 1,
-            duration: 800 + index * 200,
-            useNativeDriver: true,
-          }),
-        ])
-      )
-    );
-
-    // Постоянная анимация вращения для таблеточек
-    const rotateAnims = pillRotateAnimations.map((anim, index) =>
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(anim, {
-            toValue: 1,
-            duration: 2000 + index * 300,
-            useNativeDriver: true,
-          }),
-          Animated.timing(anim, {
-            toValue: 0,
-            duration: 2000 + index * 300,
-            useNativeDriver: true,
-          }),
-        ])
-      )
-    );
-
-    // Запускаем постоянные анимации после того, как таблеточки появились
-    const startPillAnimations = () => {
-      setTimeout(() => {
-        pulseAnims.forEach(anim => anim.start());
-        rotateAnims.forEach(anim => anim.start());
-      }, 3000);
-    };
-
-    startPillAnimations();
-
-    return () => {
-      writingCycle.stop();
-      pulseAnims.forEach(anim => anim.stop());
-      rotateAnims.forEach(anim => anim.stop());
-    };
   }, []);
+
+  // Загружаем уведомления при фокусе на экран
+  useFocusEffect(
+    useCallback(() => {
+      if (user?.id) {
+        loadNotifications();
+      }
+    }, [user?.id])
+  );
 
   const handleUserPress = () => {
     Alert.alert(
@@ -232,27 +215,6 @@ export default function HomeScreen() {
     );
   };
   
-  // Получаем текущую неделю (начинается с воскресенья)
-  const getWeekDates = () => {
-    const today = new Date(selectedDate);
-    const day = today.getDay(); // 0 = воскресенье, 1 = понедельник, ..., 6 = суббота
-    const diff = today.getDate() - day; // Воскресенье
-    const sunday = new Date(today.setDate(diff));
-    
-    const week = [];
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(sunday);
-      date.setDate(sunday.getDate() + i);
-      week.push(date);
-    }
-    return week;
-  };
-
-  const weekDates = getWeekDates();
-  const today = new Date();
-  const isToday = (date: Date) => {
-    return date.toDateString() === today.toDateString();
-  };
 
   const dayNames = [
     t("home.days.sun"), // Воскресенье - первый день
@@ -289,18 +251,20 @@ export default function HomeScreen() {
     },
     header: {
       flexDirection: "row",
-      justifyContent: "space-between",
       alignItems: "center",
-      paddingHorizontal: 16,
+      paddingHorizontal: 12,
       paddingBottom: 12,
       backgroundColor: colors.surface,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
+      gap: 8,
     },
     userSection: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 10,
+      gap: 8,
+      flexShrink: 0,
+      zIndex: 2,
     },
     userAvatar: {
       width: 36,
@@ -308,6 +272,11 @@ export default function HomeScreen() {
       borderRadius: 18,
       borderWidth: 2,
       borderColor: colors.primary,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+      elevation: 4,
     },
     userAvatarPlaceholder: {
       width: 36,
@@ -317,79 +286,24 @@ export default function HomeScreen() {
     },
     userName: {
       color: colors.text,
-      fontSize: 16,
+      fontSize: 14,
       fontWeight: "500",
+      maxWidth: 80,
     },
-    calendarContainer: {
-      backgroundColor: colors.surface,
-      paddingVertical: 12,
-      paddingHorizontal: 12,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-      borderRadius: 0,
-    },
-    calendarHeader: {
-      flexDirection: "row",
+    dateContainer: {
+      flex: 1,
       alignItems: "center",
-      justifyContent: "space-between",
-      marginBottom: 8,
+      justifyContent: "center",
     },
-    monthYearText: {
+    dateText: {
       fontSize: 14,
       fontWeight: "600",
-      color: colors.text,
-      flex: 1,
-      textAlign: "center",
-    },
-    daysRow: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      paddingHorizontal: 4,
-    },
-    dayContainer: {
-      alignItems: "center",
-      flex: 1,
-      paddingVertical: 4,
-    },
-    dayName: {
-      color: colors.textSecondary,
-      fontSize: 10,
-      fontWeight: "500",
-      marginBottom: 6,
-      textTransform: "uppercase",
-    },
-    dateCircle: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      justifyContent: "center",
-      alignItems: "center",
-      backgroundColor: "transparent",
-      borderWidth: 1.5,
-      borderColor: colors.border,
-    },
-    dateCircleSelected: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
-      shadowColor: colors.primary,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.3,
-      shadowRadius: 4,
-      elevation: 3,
-    },
-    dateNumber: {
-      color: colors.textSecondary,
-      fontSize: 13,
-      fontWeight: "500",
-    },
-    dateNumberSelected: {
-      color: colors.white,
-      fontWeight: "700",
-      fontSize: 14,
-    },
-    navButton: {
-      padding: 4,
-      borderRadius: 8,
+      textTransform: "capitalize",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 2,
+      elevation: 2,
     },
     content: {
       flex: 1,
@@ -402,67 +316,12 @@ export default function HomeScreen() {
     illustrationContainer: {
       marginBottom: 32,
       position: "relative",
-    },
-    calendarIllustration: {
-      width: 140,
-      height: 140,
-      backgroundColor: colors.surface,
-      borderRadius: 12,
-      padding: 10,
-      position: "relative",
-      borderWidth: 2,
-      borderColor: colors.primary + "40",
-      shadowColor: colors.shadow,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 4,
-    },
-    calendarHeaderIllustration: {
-      flexDirection: "row",
-      justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: 6,
-      paddingBottom: 4,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-    },
-    calendarMonthText: {
-      fontSize: 11,
-      fontWeight: "700",
-      color: colors.primary,
-      letterSpacing: 0.5,
-    },
-    calendarGrid: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      gap: 3,
-      marginTop: 6,
-    },
-    calendarCell: {
-      width: 18,
-      height: 18,
-      backgroundColor: colors.lightGray,
-      borderRadius: 3,
       justifyContent: "center",
-      alignItems: "center",
-      borderWidth: 0.5,
-      borderColor: colors.border,
     },
-    pillInCell: {
-      position: "absolute",
-    },
-    penContainer: {
-      position: "absolute",
-      top: 20,
-      right: 20,
-      width: 40,
-      height: 40,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    penIcon: {
-      transform: [{ rotate: "-45deg" }],
+    lottieAnimation: {
+      width: 200,
+      height: 200,
     },
     mainTitle: {
       color: colors.text,
@@ -499,6 +358,10 @@ export default function HomeScreen() {
       backgroundColor: colors.success,
       marginTop: 12,
     },
+    scheduleButton: {
+      backgroundColor: colors.warning,
+      marginTop: 12,
+    },
     addButtonText: {
       color: colors.white,
       fontSize: 16,
@@ -508,12 +371,38 @@ export default function HomeScreen() {
     bellButton: {
       padding: 8,
       borderRadius: 20,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+      elevation: 4,
+      flexShrink: 0,
+      zIndex: 2,
+      position: "relative",
+    },
+    badge: {
+      position: "absolute",
+      top: 0,
+      right: 0,
+      minWidth: 18,
+      height: 18,
+      borderRadius: 9,
+      paddingHorizontal: 4,
+      justifyContent: "center",
+      alignItems: "center",
+      borderWidth: 2,
+      borderColor: colors.surface,
+    },
+    badgeText: {
+      color: colors.white,
+      fontSize: 10,
+      fontWeight: "700",
     },
   });
 
   return (
     <View style={styles.container}>
-      {/* Header с пользователем */}
+      {/* Header с пользователем, календарем и уведомлениями */}
       <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <TouchableOpacity 
           style={styles.userSection}
@@ -531,65 +420,25 @@ export default function HomeScreen() {
           )}
           <Text style={styles.userName}>{user?.name || t("home.guest")}</Text>
         </TouchableOpacity>
+
+        {/* Сегодняшняя дата */}
+        <View style={styles.dateContainer}>
+          <Text style={[styles.dateText, { color: colors.text }]}>
+            {dayNames[today.getDay()]}, {today.getDate()} {monthNames[today.getMonth()]}
+          </Text>
+        </View>
+
         <TouchableOpacity 
-          onPress={() => router.push("/(tabs)/notifications")}
+          onPress={handleNotificationsPress}
           style={styles.bellButton}
         >
           <MaterialCommunityIcons name="bell" size={24} color={colors.error} />
+          {notifications.length > 0 && (
+            <View style={[styles.badge, { backgroundColor: colors.error }]}>
+              <Text style={styles.badgeText}>{notifications.length > 99 ? '99+' : notifications.length}</Text>
+            </View>
+          )}
         </TouchableOpacity>
-      </View>
-
-      {/* Календарь - минимизированный и улучшенный */}
-      <View style={styles.calendarContainer}>
-        <View style={styles.calendarHeader}>
-          <TouchableOpacity 
-            style={styles.navButton}
-            onPress={() => {
-              const prevWeek = new Date(selectedDate);
-              prevWeek.setDate(prevWeek.getDate() - 7);
-              setSelectedDate(prevWeek);
-            }}
-          >
-            <MaterialCommunityIcons name="chevron-left" size={20} color={colors.primary} />
-          </TouchableOpacity>
-          
-          <Text style={styles.monthYearText}>
-            {monthNames[selectedDate.getMonth()]} {selectedDate.getFullYear()}
-          </Text>
-          
-          <TouchableOpacity 
-            style={styles.navButton}
-            onPress={() => {
-              const nextWeek = new Date(selectedDate);
-              nextWeek.setDate(nextWeek.getDate() + 7);
-              setSelectedDate(nextWeek);
-            }}
-          >
-            <MaterialCommunityIcons name="chevron-right" size={20} color={colors.primary} />
-          </TouchableOpacity>
-        </View>
-        
-        <View style={styles.daysRow}>
-          {dayNames.map((day, index) => {
-            const date = weekDates[index];
-            const isSelected = isToday(date);
-            return (
-              <TouchableOpacity
-                key={index}
-                style={styles.dayContainer}
-                onPress={() => setSelectedDate(date)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.dayName}>{day}</Text>
-                <View style={[styles.dateCircle, isSelected && styles.dateCircleSelected]}>
-                  <Text style={[styles.dateNumber, isSelected && styles.dateNumberSelected]}>
-                    {date.getDate()}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
       </View>
 
       {/* Основной контент */}
@@ -598,117 +447,28 @@ export default function HomeScreen() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* Анимированная иллюстрация календаря */}
+        {/* Анимация Medical Shield */}
         <View style={styles.illustrationContainer}>
           <Animated.View 
             style={[
-              styles.calendarIllustration,
               {
-                opacity: calendarFade,
+                opacity: animationFade,
                 transform: [
                   {
-                    scale: calendarScale,
+                    scale: animationScale,
                   },
                 ],
               },
             ]}
           >
-              {/* Заголовок календаря */}
-              <View style={styles.calendarHeaderIllustration}>
-                <Text style={styles.calendarMonthText}>{englishMonths[today.getMonth()]}</Text>
-                <MaterialCommunityIcons name="calendar" size={12} color={colors.primary} />
-              </View>
-              
-              {/* Календарная сетка с анимированными пилюлями */}
-              <View style={styles.calendarGrid}>
-                {[...Array(12)].map((_, i) => {
-                  const hasPill = i === 2 || i === 5 || i === 8;
-                  const pillIndex = i === 2 ? 0 : i === 5 ? 1 : i === 8 ? 2 : -1;
-                  const pillColor = i === 2 ? colors.error : i === 5 ? colors.primary : colors.success;
-                  
-                  return (
-                    <View key={i} style={styles.calendarCell}>
-                      {hasPill && pillIndex >= 0 && (
-                        <Animated.View
-                          style={[
-                            styles.pillInCell,
-                            {
-                              opacity: pillAnimations[pillIndex],
-                              transform: [
-                                {
-                                  scale: pillAnimations[pillIndex].interpolate({
-                                    inputRange: [0, 0.5, 1],
-                                    outputRange: [0, 1.2, 1.2],
-                                  }),
-                                },
-                              ],
-                            },
-                          ]}
-                        >
-                          <Animated.View
-                            style={{
-                              transform: [
-                                {
-                                  scale: pillPulseAnimations[pillIndex],
-                                },
-                                {
-                                  rotate: pillRotateAnimations[pillIndex].interpolate({
-                                    inputRange: [0, 0.5, 1],
-                                    outputRange: ["-8deg", "8deg", "-8deg"],
-                                  }),
-                                },
-                              ],
-                            }}
-                          >
-                            <MaterialCommunityIcons name="pill" size={14} color={pillColor} />
-                          </Animated.View>
-                        </Animated.View>
-                      )}
-                    </View>
-                  );
-                })}
-              </View>
-            </Animated.View>
-            
-            {/* Анимированное перо/карандаш с улучшенной анимацией */}
-            <Animated.View
-              style={[
-                styles.penContainer,
-                {
-                  opacity: penAnimation.interpolate({
-                    inputRange: [0, 0.3, 0.7, 1],
-                    outputRange: [0, 1, 1, 0],
-                  }),
-                  transform: [
-                    {
-                      translateX: penPosition.x,
-                    },
-                    {
-                      translateY: penPosition.y,
-                    },
-                    {
-                      rotate: penAnimation.interpolate({
-                        inputRange: [0, 0.5, 1],
-                        outputRange: ["-45deg", "-30deg", "-45deg"],
-                      }),
-                    },
-                    {
-                      scale: penAnimation.interpolate({
-                        inputRange: [0, 0.5, 1],
-                        outputRange: [0.8, 1.1, 0.8],
-                      }),
-                    },
-                  ],
-                },
-              ]}
-            >
-              <MaterialCommunityIcons 
-                name="pencil" 
-                size={26} 
-                color={colors.primary} 
-                style={styles.penIcon}
-              />
-            </Animated.View>
+            <LottieView
+              source={medicalShieldAnimation}
+              style={styles.lottieAnimation}
+              autoPlay
+              loop
+              resizeMode="contain"
+            />
+          </Animated.View>
         </View>
 
         {/* Заголовок */}
@@ -726,6 +486,7 @@ export default function HomeScreen() {
           style={styles.addButton}
           onPress={() => router.push("/(tabs)/home/add")}
         >
+          <MaterialCommunityIcons name="pill" size={20} color={colors.white} style={{ marginRight: 8 }} />
           <Text style={styles.addButtonText}>{t("home.addMedication")}</Text>
         </TouchableOpacity>
 
@@ -737,7 +498,133 @@ export default function HomeScreen() {
           <MaterialCommunityIcons name="file-document-outline" size={20} color={colors.white} style={{ marginRight: 8 }} />
           <Text style={styles.addButtonText}>{t("home.scanPrescription")}</Text>
         </TouchableOpacity>
+
+        {/* Кнопка расписание приема */}
+        <TouchableOpacity
+          style={[styles.addButton, styles.scheduleButton]}
+          onPress={() => router.push("/(tabs)/home/schedule")}
+        >
+          <MaterialCommunityIcons name="calendar-clock" size={20} color={colors.white} style={{ marginRight: 8 }} />
+          <Text style={styles.addButtonText}>{t("home.schedule")}</Text>
+        </TouchableOpacity>
       </ScrollView>
+
+      {/* Модальное окно уведомлений */}
+      <Modal
+        visible={showNotificationsModal}
+        onClose={() => setShowNotificationsModal(false)}
+        title={t("notifications.title") || "Уведомления"}
+        showCloseButton={true}
+      >
+        {/* Кнопка добавления напоминания в header модального окна */}
+        <View style={{ flexDirection: "row", justifyContent: "center", marginBottom: 16 }}>
+          <TouchableOpacity
+            onPress={() => {
+              setShowNotificationsModal(false);
+              router.push("/(tabs)/home/add/reminder");
+            }}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: colors.primary + "20",
+              paddingHorizontal: 16,
+              paddingVertical: 10,
+              borderRadius: 8,
+            }}
+          >
+            <MaterialCommunityIcons name="bell-plus" size={20} color={colors.primary} />
+            <Text style={{ color: colors.primary, fontWeight: "600", marginLeft: 8, fontSize: 14 }}>
+              {t("reminders.create") || "Добавить напоминание"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {loadingNotifications ? (
+          <View style={{ padding: 20, alignItems: "center" }}>
+            <Text style={{ color: colors.textSecondary }}>Загрузка...</Text>
+          </View>
+        ) : notifications.length === 0 ? (
+          <View style={{ padding: 20, alignItems: "center" }}>
+            <MaterialCommunityIcons name="bell-off" size={48} color={colors.textSecondary} />
+            <Text style={{ color: colors.textSecondary, marginTop: 16, fontSize: 16 }}>
+              {t("notifications.empty") || "Нет уведомлений"}
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            data={notifications}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => {
+              const isExpired = item.type === "expired";
+              const isExpiring = item.type === "expiring";
+              const isReminder = item.type === "reminder";
+
+              return (
+                <TouchableOpacity
+                  style={{
+                    flexDirection: "row",
+                    padding: 16,
+                    borderRadius: 12,
+                    marginBottom: 12,
+                    alignItems: "center",
+                    backgroundColor: isExpired
+                      ? colors.error + "20"
+                      : isExpiring
+                      ? colors.warning + "20"
+                      : colors.primary + "20",
+                    borderLeftWidth: 4,
+                    borderLeftColor: isExpired
+                      ? colors.error
+                      : isExpiring
+                      ? colors.warning
+                      : colors.primary,
+                  }}
+                  onPress={() => {
+                    setShowNotificationsModal(false);
+                    if (item.medicine) {
+                      router.push(`/(tabs)/home/medicine/${item.medicine.id}`);
+                    } else if (item.reminder) {
+                      // Переход на расписание для просмотра напоминаний
+                      router.push("/(tabs)/home/schedule");
+                    }
+                  }}
+                >
+                  <MaterialCommunityIcons
+                    name={
+                      isExpired
+                        ? "alert-circle"
+                        : isExpiring
+                        ? "alert"
+                        : "bell"
+                    }
+                    size={32}
+                    color={
+                      isExpired
+                        ? colors.error
+                        : isExpiring
+                        ? colors.warning
+                        : colors.primary
+                    }
+                  />
+                  <View style={{ marginLeft: 12, flex: 1 }}>
+                    <Text style={{ fontSize: 16, fontWeight: "700", color: colors.text, marginBottom: 4 }}>
+                      {item.title}
+                    </Text>
+                    <Text style={{ fontSize: 14, color: colors.textSecondary, marginBottom: 2 }}>
+                      {item.subtitle}
+                    </Text>
+                    <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 4 }}>
+                      {item.date}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            }}
+            style={{ maxHeight: 400 }}
+            contentContainerStyle={{ padding: 8 }}
+          />
+        )}
+      </Modal>
     </View>
   );
 }

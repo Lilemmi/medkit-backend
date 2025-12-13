@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "medkit-backend",
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    "test"
+  ]
+}

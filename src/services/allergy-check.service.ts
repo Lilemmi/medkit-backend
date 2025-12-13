@@ -28,11 +28,12 @@ export async function checkMedicineAllergies(
   medicineName: string,
   userId: number,
   userAllergies?: string,
-  userName?: string
+  userName?: string,
+  activeIngredientsFromDB?: string[] | any
 ): Promise<AllergyCheckResult> {
   try {
-    // 1. Получаем состав лекарства
-    const ingredients = await getMedicineIngredients(medicineName);
+    // 1. Получаем состав лекарства (используем данные из БД, если есть)
+    const ingredients = await getMedicineIngredients(medicineName, activeIngredientsFromDB);
     
     // 2. Получаем всех членов семьи
     const familyMembers = await getAllFamilyMembers();
@@ -43,7 +44,7 @@ export async function checkMedicineAllergies(
       userAllergies && userName
         ? { id: userId, name: userName, allergies: userAllergies }
         : null,
-    ].filter(Boolean) as Array<{ id: number; name: string; allergies: string }>;
+    ].filter(Boolean) as { id: number; name: string; allergies: string }[];
     
     // 4. Собираем все вещества из лекарства
     const allSubstances = [

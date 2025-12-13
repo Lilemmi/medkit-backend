@@ -15,6 +15,8 @@ import {
   getAllMedicines,
 } from "../../../../src/database/medicine.service";
 import { useAuthStore } from "../../../../src/store/authStore";
+import { formatExpiryDate } from "../../../../src/utils/date-formatter";
+import type { MedicineRow } from "../../../../src/types/db";
 
 // 🔔 Просим доступ к уведомлениям
 async function requestNotificationPermission() {
@@ -27,7 +29,7 @@ async function requestNotificationPermission() {
 export default function MedicinesScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState<MedicineRow[]>([]);
 
   async function loadData() {
     if (!user?.id) {
@@ -65,8 +67,14 @@ export default function MedicinesScreen() {
       content: {
         title: "⚠️ Лекарство скоро просрочится",
         body: `${item.name} (${item.dose || ""}) годен до ${item.expiry}`,
+        sound: "default", // Звук по умолчанию
+        priority: Notifications.AndroidNotificationPriority.MAX, // Максимальный приоритет
+        categoryIdentifier: "medication-expiry", // Категория для группировки
       },
-      trigger: target,
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: target,
+      },
     });
 
     Alert.alert("Уведомление установлено", "Напомню за 2 дня 👍");
@@ -74,6 +82,11 @@ export default function MedicinesScreen() {
 
   // 🗑️ Удаление
   function handleDelete(id: number) {
+    if (!user?.id) {
+      Alert.alert("Ошибка", "Пользователь не найден");
+      return;
+    }
+
     Alert.alert("Удалить?", "Вы хотите удалить это лекарство?", [
       { text: "Отмена" },
       {
@@ -81,7 +94,7 @@ export default function MedicinesScreen() {
         style: "destructive",
         onPress: async () => {
           try {
-            await deleteMedicine(id);
+            await deleteMedicine(id, user.id);
             loadData();
           } catch (error) {
             console.error("Error deleting medicine:", error);
@@ -107,7 +120,7 @@ export default function MedicinesScreen() {
           <Text style={styles.name}>{item.name || "Без названия"}</Text>
           <Text style={styles.info}>💊 Дозировка: {item.dose || "—"}</Text>
           <Text style={styles.info}>🧪 Форма: {item.form || "—"}</Text>
-          <Text style={styles.info}>⌛ Годен до: {item.expiry || "—"}</Text>
+          <Text style={styles.info}>⌛ Годен до: {formatExpiryDate(item.expiry) || "—"}</Text>
           <Text style={styles.date}>Добавлено: {item.createdAt || "—"}</Text>
 
           <View style={styles.buttonsRow}>
@@ -228,6 +241,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
+
+
+
+
+
+
 
 
 

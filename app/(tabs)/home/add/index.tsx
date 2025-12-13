@@ -1,6 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback } from "react";
+import { BackHandler, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "../../../../src/theme/colors";
 import { useLanguage } from "../../../../src/context/LanguageContext";
@@ -11,17 +12,43 @@ export default function AddMedicineScreen() {
   const colors = useColors();
   const { t } = useLanguage();
 
+  // Обработка системной кнопки "Назад" (Android)
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        router.back();
+        return true;
+      };
+
+      const backHandler = BackHandler.addEventListener("hardwareBackPress", onBackPress);
+      return () => backHandler.remove();
+    }, [router])
+  );
+
   const styles = StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: colors.background,
-      padding: 20,
     },
-    title: {
-      fontSize: 28,
-      fontWeight: "700",
-      color: colors.text,
-      marginBottom: 8,
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 16,
+      paddingBottom: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    headerTitle: {
+      fontSize: 18,
+      fontWeight: "600",
+      flex: 1,
+      textAlign: "center",
+      marginHorizontal: 12,
+    },
+    contentContainer: {
+      flex: 1,
+      padding: 20,
     },
     subtitle: {
       fontSize: 16,
@@ -67,12 +94,21 @@ export default function AddMedicineScreen() {
   });
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 20 }]}>
-      <Text style={styles.title}>{t("add.title")}</Text>
+    <View style={styles.container}>
+      {/* Header с кнопкой назад */}
+      <View style={[styles.header, { paddingTop: insets.top + 12, backgroundColor: colors.surface }]}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>{t("add.title")}</Text>
+        <View style={{ width: 24 }} />
+      </View>
+
+      <View style={[styles.contentContainer, { paddingTop: 20 }]}>
       <Text style={styles.subtitle}>{t("add.subtitle")}</Text>
 
       <View style={styles.optionsContainer}>
-        {/* Сканировать коробку */}
+        {/* Сканировать лекарство */}
         <TouchableOpacity
           style={styles.optionCard}
           onPress={() => router.push("/(tabs)/home/add/scan")}
@@ -99,6 +135,7 @@ export default function AddMedicineScreen() {
             {t("add.manualDescription")}
           </Text>
         </TouchableOpacity>
+      </View>
       </View>
     </View>
   );
